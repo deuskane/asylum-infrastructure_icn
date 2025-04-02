@@ -18,7 +18,7 @@ use     ieee.numeric_std.all;
 library work;
 use     work.pbi_pkg.all;
 
-entity pci_icn is
+entity pbi_icn is
   
   generic (
     NB_TARGET         : positive   := 1;          -- Number of Target Port
@@ -38,9 +38,9 @@ entity pci_icn is
     pbi_inis_o          : out   pbi_inis_t (0 to NB_TARGET-1);
     pbi_tgts_i          : in    pbi_tgts_t (0 to NB_TARGET-1)
 );
-end entity pci_icn;
+end entity pbi_icn;
 
-architecture rtl of pci_icn is
+architecture rtl of pbi_icn is
 
   signal pbi_tgts : pbi_tgts_t (0 to NB_TARGET-1)(rdata(PBI_DATA_WIDTH -1 downto 0));
   
