@@ -14,9 +14,10 @@ CAPI=2:
 # Revisions  :
 # Date        Version  Author   Description
 # 2025-03-22  1.0.0    mrosiere Created
+# 2025-04-05  1.1.0    mrosiere Add Algo
 #-----------------------------------------------------------------------------
 
-name        : asylum:infrastructure:icn:1.0.0
+name        : asylum:infrastructure:icn:1.1.0
 description : Interconnection based on OR-Bus
 
 #=========================================

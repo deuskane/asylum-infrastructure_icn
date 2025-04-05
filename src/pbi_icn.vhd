@@ -23,7 +23,8 @@ entity pbi_icn is
   generic (
     NB_TARGET         : positive   := 1;          -- Number of Target Port
     TARGET_ID         : pbi_addrs_t;
-    TARGET_ADDR_WIDTH : pbi_naturals_t
+    TARGET_ADDR_WIDTH : naturals_t ;
+    TARGET_ALGO       : string
     );
 
   port (
@@ -47,7 +48,7 @@ architecture rtl of pbi_icn is
 begin  -- architecture rtl
 
   
-  pbi_tgt_o <= or(pbi_tgts);  
+  pbi_tgt_o <= or(pbi_tgts);
   
   gen_target: for tgt in pbi_inis_o'range
   generate
@@ -56,7 +57,8 @@ begin  -- architecture rtl
       generic map(
         SIZE_DATA      => PBI_DATA_WIDTH ,
         SIZE_ADDR_IP   => TARGET_ADDR_WIDTH(tgt),
-        ID             => TARGET_ID        (tgt)
+        ID             => TARGET_ID        (tgt),
+        ALGO           => TARGET_ALGO
         )
       port map(
         clk_i          => clk_i          ,
