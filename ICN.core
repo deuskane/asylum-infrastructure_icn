@@ -15,9 +15,10 @@ CAPI=2:
 # Date        Version  Author   Description
 # 2025-03-22  1.0.0    mrosiere Created
 # 2025-04-05  1.1.0    mrosiere Add Algo
+# 2025/05/08  1.2.0    mrosiere Change to into downto
 #-----------------------------------------------------------------------------
 
-name        : asylum:infrastructure:icn:1.1.0
+name        : asylum:infrastructure:icn:1.2.0
 description : Interconnection
 
 #=========================================
