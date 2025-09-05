@@ -15,10 +15,11 @@ CAPI=2:
 # Date        Version  Author   Description
 # 2025-03-22  1.0.0    mrosiere Created
 # 2025-04-05  1.1.0    mrosiere Add Algo
-# 2025/05/08  1.2.0    mrosiere Change to into downto
+# 2025-05-08  1.2.0    mrosiere Change to into downto
+# 2025-09-05  1.2.1    mrosiere Add Package
 #-----------------------------------------------------------------------------
 
-name        : asylum:infrastructure:icn:1.2.0
+name        : asylum:infrastructure:icn:1.2.1
 description : Interconnection
 
 #=========================================
@@ -29,6 +30,7 @@ filesets:
   hdl:
   #---------------------------------------
     files        :
+      - hdl/icn_pkg.vhd
       - hdl/pbi_icn.vhd
     file_type    : vhdlSource
    #logical_name : asylum
