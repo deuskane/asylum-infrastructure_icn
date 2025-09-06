@@ -18,6 +18,7 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library work;
 use     work.pbi_pkg.all;
+use     work.pbi_wrapper_target_pkg.all;
 
 entity pbi_icn is
   
@@ -102,7 +103,7 @@ begin  -- architecture rtl
   gen_target: for tgt in 0 to NB_TARGET-1
   generate
     
-    ins_pbi_wrapper_target : entity work.pbi_wrapper_target(rtl)
+    ins_pbi_wrapper_target : pbi_wrapper_target
       generic map(
         SIZE_DATA      => PBI_DATA_WIDTH ,
         SIZE_ADDR_IP   => TARGET_ADDR_WIDTH(tgt),
