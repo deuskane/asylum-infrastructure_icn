@@ -33,7 +33,7 @@ filesets:
       - hdl/icn_pkg.vhd
       - hdl/pbi_icn.vhd
     file_type    : vhdlSource
-   #logical_name : asylum
+    logical_name : asylum
     depend       :
       - asylum:component:pbi_wrapper_target
 

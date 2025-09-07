@@ -16,9 +16,9 @@
 library ieee;
 use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
-library work;
-use     work.pbi_pkg.all;
-use     work.pbi_wrapper_target_pkg.all;
+library asylum;
+use     asylum.pbi_pkg.all;
+use     asylum.pbi_wrapper_target_pkg.all;
 
 entity pbi_icn is
   
