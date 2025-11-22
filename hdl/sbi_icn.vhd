@@ -18,6 +18,7 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library asylum;
 use     asylum.sbi_pkg.all;
+use     asylum.icn_pkg.all;
 
 entity sbi_icn is
   
@@ -83,7 +84,7 @@ begin  -- architecture rtl
     begin  -- process
       
       -- Default slave if no target is selected
-      sbi_tgt.busy  := '0'; 
+      sbi_tgt.ready := '1'; 
       sbi_tgt.rdata := (others => '0');
       
       for tgt in 0 to NB_TARGET-1

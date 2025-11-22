@@ -30,6 +30,30 @@ component sbi_icn is
 );
 end component sbi_icn;
 
+component sbi_wrapper_target is
+  -- =====[ Parameters ]==========================
+  generic (
+    SIZE_DATA      : natural := 8;
+    SIZE_ADDR_IP   : natural := 0;
+    ID             : std_logic_vector (SBI_ADDR_WIDTH-1 downto 0) := (others => '0');
+    ADDR_ENCODING  : string  := "binary"; -- "binary" / "one_hot"
+    TGT_ZEROING    : boolean := false
+    
+     );
+  -- =====[ Interfaces ]==========================
+  port (
+    cs_o                : out   std_logic;
+
+    -- To IP
+    sbi_ini_o           : out   sbi_ini_t;
+    sbi_tgt_i           : in    sbi_tgt_t;
+    
+    -- From Bus
+    sbi_ini_i           : in    sbi_ini_t;
+    sbi_tgt_o           : out   sbi_tgt_t
+    );
+end component sbi_wrapper_target;
+
 -- [COMPONENT_INSERT][END]
 
 end icn_pkg;
