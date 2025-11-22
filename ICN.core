@@ -17,9 +17,10 @@ CAPI=2:
 # 2025-04-05  1.1.0    mrosiere Add Algo
 # 2025-05-08  1.2.0    mrosiere Change to into downto
 # 2025-09-05  1.2.1    mrosiere Add Package
+# 2025-11-22  1.2.2    mrosiere Use sbi instead pbi
 #-----------------------------------------------------------------------------
 
-name        : asylum:infrastructure:icn:1.2.1
+name        : asylum:infrastructure:icn:1.2.2
 description : Interconnection
 
 #=========================================
@@ -31,11 +32,10 @@ filesets:
   #---------------------------------------
     files        :
       - hdl/icn_pkg.vhd
-      - hdl/pbi_icn.vhd
+      - hdl/sbi_icn.vhd
+      - hdl/sbi_wrapper_target.vhd
     file_type    : vhdlSource
     logical_name : asylum
-    depend       :
-      - asylum:component:pbi_wrapper_target
 
 #=========================================
 targets:
