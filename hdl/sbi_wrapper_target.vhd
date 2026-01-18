@@ -6,7 +6,7 @@
 -- Author     : Mathieu Rosière
 -- Company    : 
 -- Created    : 2014-06-03
--- Last update: 2025-11-22
+-- Last update: 2026-01-18
 -- Platform   : 
 -- Standard   : VHDL'87
 -------------------------------------------------------------------------------
@@ -132,6 +132,7 @@ begin  -- rtl
   
   sbi_tgt_o.rdata    <= tgt_rdata;
   sbi_tgt_o.ready    <= tgt_ready;
+  sbi_tgt_o.info     <= sbi_tgt_i.info;
   
   -----------------------------------------------------------------------------
   -- To IP
@@ -148,8 +149,9 @@ begin  -- rtl
 
   process is
   begin  -- process
-
-    report "Target["&to_hstring(ID)&"] Address : "&integer'image(SIZE_ADDR_IP) severity note;
+    wait for 1 ps;
+    
+    report "["& sbi_tgt_i.info.name &"] Target["&to_hstring(ID)&"] Address : "&integer'image(SIZE_ADDR_IP) severity note;
 
     if (ADDR_ENCODING = "one_hot")
     then

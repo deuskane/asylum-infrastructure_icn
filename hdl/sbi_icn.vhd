@@ -86,7 +86,7 @@ begin  -- architecture rtl
       -- Default slave if no target is selected
       sbi_tgt.ready := '1'; 
       sbi_tgt.rdata := (others => '0');
-      
+      sbi_tgt.info.name := to_sbi_name("Default");
       for tgt in 0 to NB_TARGET-1
       loop
         if tgt_cs(tgt) = '1'

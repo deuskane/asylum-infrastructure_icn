@@ -18,9 +18,10 @@ CAPI=2:
 # 2025-05-08  1.2.0    mrosiere Change to into downto
 # 2025-09-05  1.2.1    mrosiere Add Package
 # 2025-11-22  1.2.2    mrosiere Use sbi instead pbi
+# 2026-01-18  1.2.3    mrosiere Use info record of sbi
 #-----------------------------------------------------------------------------
 
-name        : asylum:infrastructure:icn:1.2.2
+name        : asylum:infrastructure:icn:1.2.3
 description : Interconnection
 
 #=========================================
