@@ -13,7 +13,8 @@ component sbi_icn is
     TARGET_ID            : sbi_addrs_t;
     TARGET_ADDR_WIDTH    : naturals_t ;
     TARGET_ADDR_ENCODING : string     ;           -- "binary" / "one_hot"
-    ALGO_SEL             : string     := "or"     -- "or" / "mux"
+    ALGO_SEL             : string     := "or";    -- "or" / "mux"
+    PIPEOUT_ENABLE       : std_logic_vector(NB_TARGET-1 downto 0) := (others => '0') -- Pipeline enable per target
     );
 
   port (

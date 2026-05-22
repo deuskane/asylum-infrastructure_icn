@@ -28,7 +28,8 @@ entity sbi_icn is
     TARGET_ID            : sbi_addrs_t;
     TARGET_ADDR_WIDTH    : naturals_t ;
     TARGET_ADDR_ENCODING : string     ;           -- "binary" / "one_hot"
-    ALGO_SEL             : string     := "or"     -- "or" / "mux"
+    ALGO_SEL             : string     := "or";    -- "or" / "mux"
+    PIPEOUT_ENABLE       : std_logic_vector(NB_TARGET-1 downto 0) := (others => '0') -- Pipeline enable per target
     );
 
   port (
@@ -57,6 +58,10 @@ architecture rtl of sbi_icn is
                                    wdata(sbi_ini_i.wdata'range));
   signal   sbi_tgt_ds  : sbi_tgt_t(rdata(SBI_DATA_WIDTH -1 downto 0));
   
+  signal   sbi_inis_wrapped : sbi_inis_t (NB_TARGET-1 downto 0)(addr(sbi_ini_i.addr'range), 
+                                                                wdata(sbi_ini_i.wdata'range));
+  signal   sbi_tgts_wrapped : sbi_tgts_t (NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
+
 begin  -- architecture rtl
 
   -- Detection if at least one slave is addressed
@@ -102,11 +107,25 @@ begin  -- architecture rtl
       port map(
         cs_o           => tgt_cs    (tgt),
         sbi_ini_i      => sbi_ini_i      ,
-        sbi_tgt_o      => sbi_tgts  (tgt),     
-        sbi_ini_o      => sbi_inis_o(tgt),
-        sbi_tgt_i      => sbi_tgts_i(tgt)
+        sbi_tgt_o      => sbi_tgts  (tgt),
+        sbi_ini_o      => sbi_inis_wrapped(tgt),
+        sbi_tgt_i      => sbi_tgts_wrapped(tgt)
         );
     
+    ins_sbi_pipe_target : sbi_pipe
+      generic map (
+        ENABLE    => PIPEOUT_ENABLE(tgt) = '1'
+      )
+      port map (
+        clk_i     => clk_i,
+        cke_i     => cke_i,
+        arst_b_i  => arst_b_i,
+        sbi_ini_i => sbi_inis_wrapped(tgt),
+        sbi_tgt_o => sbi_tgts_wrapped(tgt),
+        sbi_ini_o => sbi_inis_o(tgt),
+        sbi_tgt_i => sbi_tgts_i(tgt)
+      );
+
   end generate gen_target;
   
 end architecture rtl;

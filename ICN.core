@@ -35,6 +35,7 @@ filesets:
     files        :
       - hdl/icn_pkg.vhd
       - hdl/sbi_default_slave.vhd
+      - hdl/sbi_pipe.vhd
       - hdl/sbi_icn_mux.vhd
       - hdl/sbi_icn.vhd
       - hdl/sbi_wrapper_target.vhd
