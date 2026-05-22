@@ -30,6 +30,46 @@ component sbi_icn is
 );
 end component sbi_icn;
 
+component sbi_pipe is
+  generic (
+    ENABLE              : boolean := true
+  );
+  port (
+    clk_i               : in std_logic;
+    cke_i               : in std_logic;
+    arst_b_i            : in std_logic;
+
+    sbi_ini_i           : in  sbi_ini_t;
+    sbi_tgt_o           : out sbi_tgt_t;
+    sbi_ini_o           : out sbi_ini_t;
+    sbi_tgt_i           : in  sbi_tgt_t
+);
+end component sbi_pipe;
+
+component sbi_icn_mux is
+  generic (
+    NB_TARGET : positive := 1;
+    ALGO_SEL  : string   := "or"
+  );
+  port (
+    sbi_tgts_i   : in  sbi_tgts_t(NB_TARGET-1 downto 0);
+    sbi_tgt_ds_i : in  sbi_tgt_t;
+    tgt_cs_i     : in  std_logic_vector(NB_TARGET-1 downto 0);
+    sbi_tgt_o    : out sbi_tgt_t
+  );
+end component sbi_icn_mux;
+
+component sbi_default_slave is
+  port (
+    clk_i               : in std_logic;
+    cke_i               : in std_logic;
+    arst_b_i            : in std_logic;
+
+    sbi_ini_i           : in  sbi_ini_t;
+    sbi_tgt_o           : out sbi_tgt_t
+);
+end component sbi_default_slave;
+
 component sbi_wrapper_target is
   -- =====[ Parameters ]==========================
   generic (

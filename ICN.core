@@ -19,9 +19,10 @@ CAPI=2:
 # 2025-09-05  1.2.1    mrosiere Add Package
 # 2025-11-22  1.2.2    mrosiere Use sbi instead pbi
 # 2026-01-18  1.2.3    mrosiere Use info record of sbi
+# 2026-05-22  1.3.0    mrosiere Add explicit default slave
 #-----------------------------------------------------------------------------
 
-name        : asylum:infrastructure:icn:1.2.3
+name        : asylum:infrastructure:icn:1.3.0
 description : Interconnection
 
 #=========================================
@@ -33,6 +34,8 @@ filesets:
   #---------------------------------------
     files        :
       - hdl/icn_pkg.vhd
+      - hdl/sbi_default_slave.vhd
+      - hdl/sbi_icn_mux.vhd
       - hdl/sbi_icn.vhd
       - hdl/sbi_wrapper_target.vhd
     file_type    : vhdlSource
