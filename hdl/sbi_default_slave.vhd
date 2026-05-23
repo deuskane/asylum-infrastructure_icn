@@ -32,7 +32,7 @@ architecture rtl of sbi_default_slave is
 begin
 
   -- Always ready with data set to 0
-  sbi_tgt_o.ready     <= '1';
+  sbi_tgt_o.ready     <= sbi_ini_i.cs;
   sbi_tgt_o.rdata     <= (others => '0');
   sbi_tgt_o.info.name <= to_sbi_name("Default");
 
