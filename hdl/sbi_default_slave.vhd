@@ -31,12 +31,11 @@ end entity sbi_default_slave;
 architecture rtl of sbi_default_slave is
 begin
 
-  -- Always ready with data set to 0
+  -- Default Slave is ready for any access and returns 0 data with an info name "Default" for debugging purposes
   sbi_tgt_o.ready     <= sbi_ini_i.cs;
   sbi_tgt_o.rdata     <= (others => '0');
   sbi_tgt_o.info.name <= to_sbi_name("Default");
 
-  -- Access report for debugging
 -- pragma translate_off
   process (clk_i) is
   begin
