@@ -48,16 +48,16 @@ end entity sbi_icn;
 
 architecture rtl of sbi_icn is
 
-  constant TGT_ZEROING : boolean := ALGO_SEL = "or";
-  
-  signal   sbi_tgts    : sbi_tgts_t (NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
-  signal   tgt_cs      : std_logic_vector(NB_TARGET-1 downto 0);
-  
-  signal   any_cs      : std_logic;
-  signal   sbi_ini_ds  : sbi_ini_t(addr(sbi_ini_i.addr'range), 
-                                   wdata(sbi_ini_i.wdata'range));
-  signal   sbi_tgt_ds  : sbi_tgt_t(rdata(SBI_DATA_WIDTH -1 downto 0));
-  
+  constant TGT_ZEROING      : boolean := ALGO_SEL = "or";
+
+  signal   sbi_tgts         : sbi_tgts_t (NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
+  signal   tgt_cs           : std_logic_vector(NB_TARGET-1 downto 0);
+
+  signal   any_cs           : std_logic;
+  signal   sbi_ini_ds       : sbi_ini_t(addr(sbi_ini_i.addr'range), 
+                                        wdata(sbi_ini_i.wdata'range));
+  signal   sbi_tgt_ds       : sbi_tgt_t(rdata(SBI_DATA_WIDTH -1 downto 0));
+
   signal   sbi_inis_wrapped : sbi_inis_t (NB_TARGET-1 downto 0)(addr(sbi_ini_i.addr'range), 
                                                                 wdata(sbi_ini_i.wdata'range));
   signal   sbi_tgts_wrapped : sbi_tgts_t (NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
