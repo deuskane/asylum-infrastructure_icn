@@ -33,7 +33,7 @@ begin
 
   -- Default Slave is ready for any access and returns 0 data with an info name "Default" for debugging purposes
   sbi_tgt_o.ready     <= sbi_ini_i.cs;
-  sbi_tgt_o.rdata     <= (others => '0');
+  sbi_tgt_o.rdata     <= (sbi_tgt_o.rdata'range => '0');
   sbi_tgt_o.info.name <= to_sbi_name("Default");
 
 -- pragma translate_off

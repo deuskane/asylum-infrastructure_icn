@@ -39,8 +39,22 @@ filesets:
       - hdl/sbi_icn_mux.vhd
       - hdl/sbi_icn.vhd
       - hdl/sbi_wrapper_target.vhd
-    file_type    : vhdlSource
+    file_type    : vhdlSource-2008
     logical_name : asylum
+    depend       :
+      - asylum:utils:pkg
+
+
+  #---------------------------------------
+  sim_basic:
+  #---------------------------------------
+    files        :
+      - sim/tb_sbi_icn.vhd
+    file_type    : vhdlSource-2008
+    #logical_name : asylum
+    depend       :
+      - bitvis:verification:uvvm
+
 
 #=========================================
 targets:
@@ -53,3 +67,16 @@ targets:
     filesets        :
       - hdl
 
+  #---------------------------------------
+  sim_basic:
+  #---------------------------------------
+    << : *default
+    description     : Simulation of basic unit tests
+    filesets_append :
+      - sim_basic
+    toplevel        : tb_sbi_icn
+    default_tool    : ghdl
+    tools :
+      ghdl :
+        analyze_options : ["-Wall","-fsynopsys","-frelaxed","--no-vital-checks"]
+        run_options     : ["--fst=dut.fst","--ieee-asserts=disable"]
