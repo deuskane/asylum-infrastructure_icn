@@ -145,25 +145,4 @@ begin  -- rtl
 
   cs_o                <= cs;
   
--- pragma translate_off
-
-  process is
-  begin  -- process
-    wait for 1 ps;
-    
-    report "["& sbi_tgt_i.info.name &"] Target["&to_hstring(ID)&"] Address : "&integer'image(SIZE_ADDR_IP) severity note;
-
-    if (ADDR_ENCODING = "one_hot")
-    then
-      report "  * Index : " &integer'image(IDX) severity note;
-      
-    end if;
-    
-
-    wait;
-  end process;
-
--- pragma translate_on  
-  
-  
 end rtl;
