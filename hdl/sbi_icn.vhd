@@ -20,16 +20,19 @@ use     ieee.numeric_std.all;
 library asylum;
 use     asylum.sbi_pkg.all;
 use     asylum.icn_pkg.all;
+use     asylum.convert_pkg.all;
 
 entity sbi_icn is
   
   generic (
+    NAME                 : string     := "sbi_icn";
     NB_TARGET            : positive   := 1;       -- Number of Target Port
     TARGET_ID            : sbi_addrs_t;
     TARGET_ADDR_WIDTH    : naturals_t ;
     TARGET_ADDR_ENCODING : string     ;           -- "binary" / "one_hot"
     ALGO_SEL             : string     := "or";    -- "or" / "mux"
-    PIPEOUT_ENABLE       : std_logic_vector(NB_TARGET-1 downto 0) := (others => '0') -- Pipeline enable per target
+    PIPEOUT_ENABLE       : std_logic_vector(NB_TARGET-1 downto 0) := (others => '0'); -- Pipeline enable per target
+    PIPEIN_ENABLE        : std_logic  := '0'      -- Pipeline enable for input
     );
 
   port (
@@ -53,23 +56,42 @@ architecture rtl of sbi_icn is
   signal   sbi_tgts         : sbi_tgts_t (NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
   signal   tgt_cs           : std_logic_vector(NB_TARGET-1 downto 0);
 
+  signal   sbi_ini_pipein   : sbi_ini_t(addr(sbi_ini_i.addr'range), 
+                                        wdata(sbi_ini_i.wdata'range));
+  signal   sbi_tgt_pipein   : sbi_tgt_t(rdata(SBI_DATA_WIDTH -1 downto 0));
+
   signal   any_cs           : std_logic;
   signal   sbi_ini_ds       : sbi_ini_t(addr(sbi_ini_i.addr'range), 
                                         wdata(sbi_ini_i.wdata'range));
   signal   sbi_tgt_ds       : sbi_tgt_t(rdata(SBI_DATA_WIDTH -1 downto 0));
 
-  signal   sbi_inis_wrapped : sbi_inis_t (NB_TARGET-1 downto 0)(addr(sbi_ini_i.addr'range), 
+  signal   sbi_inis_pipeout : sbi_inis_t (NB_TARGET-1 downto 0)(addr(sbi_ini_i.addr'range), 
                                                                 wdata(sbi_ini_i.wdata'range));
-  signal   sbi_tgts_wrapped : sbi_tgts_t (NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
+  signal   sbi_tgts_pipeout : sbi_tgts_t (NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
 
 begin  -- architecture rtl
 
   -- Detection if at least one slave is addressed
   any_cs        <= or tgt_cs;
   
+  -- Input pipeline
+  ins_sbi_pipe_input : sbi_pipe
+    generic map (
+      ENABLE    => PIPEIN_ENABLE = '1'
+    )
+    port map (
+      clk_i     => clk_i,
+      cke_i     => cke_i,
+      arst_b_i  => arst_b_i,
+      sbi_ini_i => sbi_ini_i,
+      sbi_tgt_o => sbi_tgt_o,
+      sbi_ini_o => sbi_ini_pipein,
+      sbi_tgt_i => sbi_tgt_pipein
+    );
+
   -- Signal preparation for the default slave
-  sbi_ini_ds    <= sbi_ini_i;
-  sbi_ini_ds.cs <= sbi_ini_i.cs and not any_cs;
+  sbi_ini_ds    <= sbi_ini_pipein;
+  sbi_ini_ds.cs <= sbi_ini_pipein.cs and not any_cs;
 
   -- Default slave instantiation
   ins_sbi_default_slave : sbi_default_slave
@@ -90,7 +112,7 @@ begin  -- architecture rtl
       sbi_tgts_i   => sbi_tgts,
       sbi_tgt_ds_i => sbi_tgt_ds,
       tgt_cs_i     => tgt_cs,
-      sbi_tgt_o    => sbi_tgt_o
+      sbi_tgt_o    => sbi_tgt_pipein
     );
   
   gen_target: for tgt in 0 to NB_TARGET-1
@@ -106,10 +128,10 @@ begin  -- architecture rtl
         )
       port map(
         cs_o           => tgt_cs    (tgt),
-        sbi_ini_i      => sbi_ini_i      ,
+        sbi_ini_i      => sbi_ini_pipein  ,
         sbi_tgt_o      => sbi_tgts  (tgt),
-        sbi_ini_o      => sbi_inis_wrapped(tgt),
-        sbi_tgt_i      => sbi_tgts_wrapped(tgt)
+        sbi_ini_o      => sbi_inis_pipeout(tgt),
+        sbi_tgt_i      => sbi_tgts_pipeout(tgt)
         );
     
     ins_sbi_pipe_target : sbi_pipe
@@ -120,11 +142,32 @@ begin  -- architecture rtl
         clk_i     => clk_i,
         cke_i     => cke_i,
         arst_b_i  => arst_b_i,
-        sbi_ini_i => sbi_inis_wrapped(tgt),
-        sbi_tgt_o => sbi_tgts_wrapped(tgt),
+        sbi_ini_i => sbi_inis_pipeout(tgt),
+        sbi_tgt_o => sbi_tgts_pipeout(tgt),
         sbi_ini_o => sbi_inis_o(tgt),
         sbi_tgt_i => sbi_tgts_i(tgt)
       );
+
+        
+-- pragma translate_off
+
+  process is
+  begin  -- process
+    wait for 1 ps;
+    
+    report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Target["&to_hstring(TARGET_ID(tgt))&"] Address : "&integer'image(TARGET_ADDR_WIDTH(tgt)) severity note;
+
+    if (TARGET_ADDR_ENCODING = "one_hot")
+    then
+      report "  * Index : " &integer'image(onehot_to_integer(TARGET_ID(tgt))) severity note;
+      
+    end if;
+    
+
+    wait;
+  end process;
+
+-- pragma translate_on  
 
   end generate gen_target;
   
