@@ -11,7 +11,7 @@
 -- 2025/03/22  1.0      mrosiere Created
 -- 2025/04/08  1.1      mrosiere Add selection algo
 -- 2025/05/08  1.2      mrosiere Change to into downto
--- 2025/06/22  1.3      mrosiere Add external default slave
+-- 2026/05/22  1.3      mrosiere Add external default slave
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -90,8 +90,11 @@ begin  -- architecture rtl
     );
 
   -- Signal preparation for the default slave
-  sbi_ini_ds    <= sbi_ini_pipein;
-  sbi_ini_ds.cs <= sbi_ini_pipein.cs and not any_cs;
+  process (ALL) is
+  begin
+    sbi_ini_ds    <= sbi_ini_pipein;
+    sbi_ini_ds.cs <= sbi_ini_pipein.cs and not any_cs;
+  end process;
 
   -- Default slave instantiation
   ins_sbi_default_slave : sbi_default_slave
