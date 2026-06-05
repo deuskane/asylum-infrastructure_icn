@@ -1,3 +1,16 @@
+-------------------------------------------------------------------------------
+-- Title      : tb_sbi_icn
+-- Project    : Asylum
+-------------------------------------------------------------------------------
+-- Description: Testbench for SBI Interconnect
+-------------------------------------------------------------------------------
+-- Copyright (c) 2026
+-------------------------------------------------------------------------------
+-- Revisions  :
+-- Date        Version  Author   Description
+-- 2026-06-05  1.0      mrosiere Created
+-------------------------------------------------------------------------------
+
 library ieee;
 use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
@@ -20,12 +33,18 @@ end entity tb_sbi_icn;
 architecture sim of tb_sbi_icn is
 
   constant C_SCOPE        : string := "TB_SBI_ICN";
+  use work.tb_sbi_icn_pkg.all;
+  use work.tb_sbi_icn_suite_pkg.all;
 
   -- Clock and Reset
   constant C_CLK_PERIOD   : time := 10 ns;
   signal   clk_i          : std_logic := '0';
   signal   cke_i          : std_logic := '1';
   signal   arst_b_i       : std_logic := '0'; -- Active low reset
+
+  -- Master configuration
+  constant C_NB_MASTER            : positive   := 2;
+  constant C_MASTER_SEL           : string     := "roundrobin";
 
   -- Constants for sbi_icn generics
   constant C_NB_TARGET            : positive   := 3;
@@ -55,33 +74,22 @@ architecture sim of tb_sbi_icn is
 
   -- SBI Bus Signals
   -- Assuming sbi_ini_t and sbi_tgt_t are defined with SBI_ADDR_WIDTH and SBI_DATA_WIDTH in sbi_pkg
-  signal sbi_ini_i        : sbi_ini_t(addr (SBI_ADDR_WIDTH-1 downto 0),
-                                      wdata(SBI_DATA_WIDTH-1 downto 0));
-  signal sbi_tgt_o        : sbi_tgt_t(rdata(SBI_DATA_WIDTH-1 downto 0));
+  signal sbi_inis_i       : sbi_inis_t (C_NB_MASTER-1 downto 0)(addr (SBI_ADDR_WIDTH-1 downto 0),
+                                                                wdata(SBI_DATA_WIDTH-1 downto 0));
+  signal sbi_tgts_o       : sbi_tgts_t (C_NB_MASTER-1 downto 0)(rdata(SBI_DATA_WIDTH-1 downto 0));
+
   signal sbi_inis_o       : sbi_inis_t (C_NB_TARGET-1 downto 0)(addr (SBI_ADDR_WIDTH-1 downto 0),
                                                                 wdata(SBI_DATA_WIDTH-1 downto 0));
   signal sbi_tgts_i       : sbi_tgts_t (C_NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH-1 downto 0));
 
   -- UVVM SBI Interface
-  signal sbi_if           : t_sbi_if(addr (SBI_ADDR_WIDTH-1 downto 0), 
-                                     wdata(SBI_DATA_WIDTH-1 downto 0), 
-                                     rdata(SBI_DATA_WIDTH-1 downto 0))
-                          := (ready => 'Z', 
-                              rdata => (others => 'Z'),
-                              cs    => 'Z',
-                              rena  => 'Z',
-                              wena  => 'Z',
-                              wdata => (others => 'Z'),
-                              addr  => (others => 'Z'));
-
-
-  -- Function to convert integer to std_logic_vector (assuming not in convert_pkg or numeric_std directly as to_slv)
-  function to_slv (val : natural; size : natural) return std_logic_vector is
-    variable res : std_logic_vector(size-1 downto 0);
-  begin
-    res := std_logic_vector(to_unsigned(val, size));
-    return res;
-  end function to_slv;
+  signal sbi_ifs          : t_sbi_if_array(0 to C_NB_MASTER-1) := (others => (ready => 'Z', 
+                                                          rdata => (others => 'Z'),
+                                                          cs    => 'Z',
+                                                          rena  => 'Z', 
+                                                          wena  => 'Z', 
+                                                          wdata => (others => 'Z'), 
+                                                          addr  => (others => 'Z'))); 
 
 begin
 
@@ -89,6 +97,8 @@ begin
   dut : sbi_icn
     generic map (
       NAME                 => "sbi_icn_tb",
+      NB_MASTER            => C_NB_MASTER,
+      MASTER_SEL           => C_MASTER_SEL,
       NB_TARGET            => C_NB_TARGET,
       TARGET_ID            => C_TARGET_ID,
       TARGET_ADDR_WIDTH    => C_TARGET_ADDR_WIDTH,
@@ -101,20 +111,22 @@ begin
       clk_i     => clk_i,
       cke_i     => cke_i,
       arst_b_i  => arst_b_i,
-      sbi_ini_i => sbi_ini_i,
-      sbi_tgt_o => sbi_tgt_o,
+      sbi_inis_i => sbi_inis_i,
+      sbi_tgts_o => sbi_tgts_o,
       sbi_inis_o => sbi_inis_o,
       sbi_tgts_i => sbi_tgts_i
     );
 
   -- Mapping UVVM SBI IF to Asylum SBI Ports
-  sbi_ini_i.cs    <= sbi_if.cs;
-  sbi_ini_i.addr  <= std_logic_vector(sbi_if.addr);
-  sbi_ini_i.re    <= sbi_if.rena;
-  sbi_ini_i.we    <= sbi_if.wena;
-  sbi_ini_i.wdata <= sbi_if.wdata;
-  sbi_if.ready    <= sbi_tgt_o.ready;
-  sbi_if.rdata    <= sbi_tgt_o.rdata;
+  gen_master_if: for m in 0 to C_NB_MASTER-1 generate
+    sbi_inis_i(m).cs    <= sbi_ifs(m).cs;
+    sbi_inis_i(m).addr  <= std_logic_vector(sbi_ifs(m).addr);
+    sbi_inis_i(m).re    <= sbi_ifs(m).rena;
+    sbi_inis_i(m).we    <= sbi_ifs(m).wena;
+    sbi_inis_i(m).wdata <= sbi_ifs(m).wdata;
+    sbi_ifs(m).ready    <= sbi_tgts_o(m).ready;
+    sbi_ifs(m).rdata    <= sbi_tgts_o(m).rdata;
+  end generate;
 
   -- Clock generation
   clk_gen : process
@@ -181,93 +193,19 @@ begin
 
   -- Test Stimulus Process
   test_stimulus : process
+    -- No local constants needed here, all passed to run_test_suite
   begin
-    -- Initialisation des logs UVVM
-    --set_log_filter_all(set_256 => (others => '1'));
-    -- Print the configuration to the log
-    report_global_ctrl (VOID);
-    report_msg_id_panel(VOID);
-
-    enable_log_msg     (ALL_MESSAGES);
-
-    sbi_if.cs  <= '0';
-    sbi_if.addr <= (others => '0');
-    sbi_if.wena <= '0';
-    sbi_if.rena <= '0';
-    sbi_if.wdata <= (others => '0');
-
-    wait until arst_b_i = '1'; -- Wait for reset to de-assert
-    wait for C_CLK_PERIOD;
-    log(ID_LOG_HDR, "Simulation Started", C_SCOPE);
-
-    ---------------------------------------------------------------------------
-    -- Test Case 1: Simple access to each target
-    ---------------------------------------------------------------------------
-    log(ID_LOG_HDR, "Test Case 1: Simple access to each target", C_SCOPE);
-
-    -- Target 0 (base address 0x00)
-    sbi_write(addr_value => x"00", data_value => x"A5", msg => "Write T0",          clk => clk_i, sbi_if => sbi_if);
-    sbi_check(addr_value => x"00", data_exp   => x"A5", msg => "Check T0",          clk => clk_i, sbi_if => sbi_if);
-    sbi_write(addr_value => x"01", data_value => x"5A", msg => "Write T0 offset 1", clk => clk_i, sbi_if => sbi_if); 
-    sbi_check(addr_value => x"01", data_exp   => x"5A", msg => "Check T0 offset 1", clk => clk_i, sbi_if => sbi_if);
-
-    -- Target 1 (base address 0x40)
-    sbi_write(addr_value => x"40", data_value => x"12", msg => "Write T1",          clk => clk_i, sbi_if => sbi_if);
-    sbi_check(addr_value => x"40", data_exp   => x"12", msg => "Check T1",          clk => clk_i, sbi_if => sbi_if);
-    sbi_write(addr_value => x"42", data_value => x"34", msg => "Write T1 offset 2", clk => clk_i, sbi_if => sbi_if); 
-    sbi_check(addr_value => x"42", data_exp   => x"34", msg => "Check T1 offset 2", clk => clk_i, sbi_if => sbi_if);
-
-    -- Target 2 (base address 0x80)
-    sbi_write(addr_value => x"80", data_value => x"FF", msg => "Write T2",          clk => clk_i, sbi_if => sbi_if);
-    sbi_check(addr_value => x"80", data_exp   => x"FF", msg => "Check T2",          clk => clk_i, sbi_if => sbi_if);
-    sbi_write(addr_value => x"83", data_value => x"00", msg => "Write T2 offset 3", clk => clk_i, sbi_if => sbi_if); 
-    sbi_check(addr_value => x"83", data_exp   => x"00", msg => "Check T2 offset 3", clk => clk_i, sbi_if => sbi_if);
-
-    ---------------------------------------------------------------------------
-    -- Test Case 2: Access to default slave
-    ---------------------------------------------------------------------------
-    log(ID_LOG_HDR, "Test Case 2: Access to default slave", C_SCOPE);
- 
-    -- Address 0xC0 should go to default slave (since targets only go up to 0xBF)
-    -- Default slave typically returns all zeros for reads and ignores writes.
-    sbi_write(addr_value => x"C0", data_value => x"EE", msg => "Write to default slave", clk => clk_i, sbi_if => sbi_if); 
-    sbi_check(addr_value => x"C0", data_exp   => x"00", msg => "Check default slave",    clk => clk_i, sbi_if => sbi_if); 
-    sbi_check(addr_value => x"FF", data_exp   => x"00", msg => "Check unmapped top addr",clk => clk_i, sbi_if => sbi_if); 
-
-    ---------------------------------------------------------------------------
-    -- Test Case 3: Exhaustive access (more comprehensive)
-    ---------------------------------------------------------------------------
-    log(ID_LOG_HDR, "Test Case 3: Exhaustive access (more comprehensive)", C_SCOPE);
-
-    -- Write and read multiple locations for Target 0
-    for i in 0 to C_TARGET_MEM_SIZE(0) - 1 loop
-      sbi_write(addr_value => unsigned(C_TARGET_ID(0)) + i, data_value => to_slv(i + 1, SBI_DATA_WIDTH), msg => "Exhaustive write T0", clk => clk_i, sbi_if => sbi_if);
-    end loop;
-    for i in 0 to C_TARGET_MEM_SIZE(0) - 1 loop
-      sbi_check(addr_value => unsigned(C_TARGET_ID(0)) + i, data_exp => to_slv(i + 1, SBI_DATA_WIDTH), msg => "Exhaustive check T0", clk => clk_i, sbi_if => sbi_if);
-    end loop;
-
-    -- Write and read multiple locations for Target 1
-    for i in 0 to C_TARGET_MEM_SIZE(1) - 1 loop
-      sbi_write(addr_value => unsigned(C_TARGET_ID(1)) + i, data_value => to_slv(i + 10, SBI_DATA_WIDTH), msg => "Exhaustive write T1", clk => clk_i, sbi_if => sbi_if);
-    end loop;
-    for i in 0 to C_TARGET_MEM_SIZE(1) - 1 loop
-      sbi_check(addr_value => unsigned(C_TARGET_ID(1)) + i, data_exp => to_slv(i + 10, SBI_DATA_WIDTH), msg => "Exhaustive check T1", clk => clk_i, sbi_if => sbi_if);
-    end loop;
-
-    -- Test sequential bursts to different targets
-    log(ID_SEQUENCER, "Testing sequential bursts to different targets", C_SCOPE);
-    sbi_write(addr_value => unsigned(C_TARGET_ID(0)) + unsigned'(x"00"), data_value => x"AA", msg => "Burst write T0", clk => clk_i, sbi_if => sbi_if);
-    sbi_write(addr_value => unsigned(C_TARGET_ID(1)) + unsigned'(x"00"), data_value => x"BB", msg => "Burst write T1", clk => clk_i, sbi_if => sbi_if);
-    sbi_check(addr_value => unsigned(C_TARGET_ID(0)) + unsigned'(x"00"), data_exp => x"AA", msg => "Burst check T0", clk => clk_i, sbi_if => sbi_if);
-    sbi_check(addr_value => unsigned(C_TARGET_ID(1)) + unsigned'(x"00"), data_exp => x"BB", msg => "Burst check T1", clk => clk_i, sbi_if => sbi_if);
-
-    log(ID_LOG_HDR, "Simulation Finished. All tests passed.", C_SCOPE);
-    report_alert_counters(FINAL);      -- Report final counters and print conclusion for simulation (Success/Fail)
-    log(ID_LOG_HDR, "SIMULATION COMPLETED", C_SCOPE);
-
-    -- Finish the simulation
-    std.env.stop;
+    run_test_suite(
+      clk_i          => clk_i,
+      arst_b_i       => arst_b_i,
+      sbi_ifs        => sbi_ifs,
+      C_NB_MASTER    => C_NB_MASTER,
+      C_NB_TARGET    => C_NB_TARGET,
+      C_TARGET_ID    => C_TARGET_ID,
+      C_TARGET_MEM_SIZE => C_TARGET_MEM_SIZE,
+      C_CLK_PERIOD   => C_CLK_PERIOD,
+      C_SCOPE        => C_SCOPE
+    );
  end process test_stimulus;
 
 end architecture sim;

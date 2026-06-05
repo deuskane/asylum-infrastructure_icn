@@ -26,6 +26,8 @@ entity sbi_icn is
   
   generic (
     NAME                 : string     := "sbi_icn";
+    NB_MASTER            : positive   := 1;       -- Number of Initiator Port
+    MASTER_SEL           : string     := "fix";   -- "fix" / "roundrobin"
     NB_TARGET            : positive   := 1;       -- Number of Target Port
     TARGET_ID            : sbi_addrs_t;
     TARGET_ADDR_WIDTH    : naturals_t ;
@@ -41,8 +43,8 @@ entity sbi_icn is
     arst_b_i            : in std_logic;           -- Asynchronous Reset Active Low
 
     -- From Bus
-    sbi_ini_i           : in    sbi_ini_t;
-    sbi_tgt_o           : out   sbi_tgt_t;
+    sbi_inis_i          : in    sbi_inis_t (NB_MASTER-1 downto 0);
+    sbi_tgts_o          : out   sbi_tgts_t (NB_MASTER-1 downto 0);
 
     sbi_inis_o          : out   sbi_inis_t (NB_TARGET-1 downto 0);
     sbi_tgts_i          : in    sbi_tgts_t (NB_TARGET-1 downto 0)
@@ -56,47 +58,78 @@ architecture rtl of sbi_icn is
   signal   sbi_tgts         : sbi_tgts_t (NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
   signal   tgt_cs           : std_logic_vector(NB_TARGET-1 downto 0);
 
-  signal   sbi_ini_pipein   : sbi_ini_t(addr(sbi_ini_i.addr'range), 
-                                        wdata(sbi_ini_i.wdata'range));
-  signal   sbi_tgt_pipein   : sbi_tgt_t(rdata(SBI_DATA_WIDTH -1 downto 0));
+  signal   sbi_inis_pipein  : sbi_inis_t (NB_MASTER-1 downto 0)(addr(sbi_inis_i(0).addr'range), 
+                                                                wdata(sbi_inis_i(0).wdata'range));
+  signal   sbi_tgts_pipein  : sbi_tgts_t (NB_MASTER-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
+
+  signal   sbi_ini_mux      : sbi_ini_t(addr (sbi_inis_i(0).addr'range), 
+                                        wdata(sbi_inis_i(0).wdata'range));
+  signal   sbi_tgt_mux      : sbi_tgt_t(rdata(SBI_DATA_WIDTH -1 downto 0));
 
   signal   any_cs           : std_logic;
-  signal   sbi_ini_ds       : sbi_ini_t(addr(sbi_ini_i.addr'range), 
-                                        wdata(sbi_ini_i.wdata'range));
+  signal   sbi_ini_ds       : sbi_ini_t(addr (sbi_inis_i(0).addr'range), 
+                                        wdata(sbi_inis_i(0).wdata'range));
   signal   sbi_tgt_ds       : sbi_tgt_t(rdata(SBI_DATA_WIDTH -1 downto 0));
 
-  signal   sbi_inis_pipeout : sbi_inis_t (NB_TARGET-1 downto 0)(addr(sbi_ini_i.addr'range), 
-                                                                wdata(sbi_ini_i.wdata'range));
+  signal   sbi_inis_pipeout : sbi_inis_t (NB_TARGET-1 downto 0)(addr (sbi_inis_i(0).addr'range), 
+                                                                wdata(sbi_inis_i(0).wdata'range));
   signal   sbi_tgts_pipeout : sbi_tgts_t (NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
 
 begin  -- architecture rtl
 
-  -- Detection if at least one slave is addressed
-  any_cs        <= or tgt_cs;
-  
-  -- Input pipeline
-  ins_sbi_pipe_input : sbi_pipe
+  -------------------------------------------------------------------------------
+  -- Input pipelines per master
+  -------------------------------------------------------------------------------
+  gen_master_pipe: for m in 0 to NB_MASTER-1 generate
+    ins_sbi_pipe_input : sbi_pipe
+      generic map (
+        ENABLE    => PIPEIN_ENABLE = '1'
+      )
+      port map (
+        clk_i     => clk_i,
+        cke_i     => cke_i,
+        arst_b_i  => arst_b_i,
+        sbi_ini_i => sbi_inis_i(m),
+        sbi_tgt_o => sbi_tgts_o(m),
+        sbi_ini_o => sbi_inis_pipein(m),
+        sbi_tgt_i => sbi_tgts_pipein(m)
+      );
+  end generate;
+
+  -------------------------------------------------------------------------------
+  -- Master Selection
+  --
+  -- Selection of the master initiator to be connected to the target side. Depending on
+  -- the ALGO_SEL generic, the selection is done using an OR of the chip selects
+  -------------------------------------------------------------------------------
+  ins_sbi_icn_mux_mst : sbi_icn_mux_mst
     generic map (
-      ENABLE    => PIPEIN_ENABLE = '1'
+      NB_MASTER    => NB_MASTER,
+      MASTER_SEL   => MASTER_SEL
     )
     port map (
-      clk_i     => clk_i,
-      cke_i     => cke_i,
-      arst_b_i  => arst_b_i,
-      sbi_ini_i => sbi_ini_i,
-      sbi_tgt_o => sbi_tgt_o,
-      sbi_ini_o => sbi_ini_pipein,
-      sbi_tgt_i => sbi_tgt_pipein
+      clk_i        => clk_i,
+      cke_i        => cke_i,
+      arst_b_i     => arst_b_i,
+      sbi_inis_i   => sbi_inis_pipein,
+      sbi_tgts_o   => sbi_tgts_pipein,
+      sbi_ini_o    => sbi_ini_mux,
+      sbi_tgt_i    => sbi_tgt_mux
     );
 
+  --------------------------------------------------------------------------------
+  -- Default slave
+  --------------------------------------------------------------------------------
+  -- Detection if at least one target is addressed
+  any_cs        <= or tgt_cs;
+  
   -- Signal preparation for the default slave
   process (ALL) is
   begin
-    sbi_ini_ds    <= sbi_ini_pipein;
-    sbi_ini_ds.cs <= sbi_ini_pipein.cs and not any_cs;
+    sbi_ini_ds    <= sbi_ini_mux;
+    sbi_ini_ds.cs <= sbi_ini_mux.cs and not any_cs;
   end process;
 
-  -- Default slave instantiation
   ins_sbi_default_slave : sbi_default_slave
     port map (
       clk_i     => clk_i,
@@ -106,7 +139,12 @@ begin  -- architecture rtl
       sbi_tgt_o => sbi_tgt_ds
     );
 
-  ins_sbi_icn_mux : sbi_icn_mux
+  --------------------------------------------------------------------------------
+  -- Target Mux
+  -- Selects the target response to be sent back to the master side. 
+  -- Depending on the ALGO_SEL generic, the selection is done using an OR of the chip selects or a mux.
+  --------------------------------------------------------------------------------
+  ins_sbi_icn_mux_tgt : sbi_icn_mux_tgt
     generic map (
       NB_TARGET    => NB_TARGET,
       ALGO_SEL     => ALGO_SEL
@@ -115,9 +153,13 @@ begin  -- architecture rtl
       sbi_tgts_i   => sbi_tgts,
       sbi_tgt_ds_i => sbi_tgt_ds,
       tgt_cs_i     => tgt_cs,
-      sbi_tgt_o    => sbi_tgt_pipein
+      sbi_tgt_o    => sbi_tgt_mux
     );
   
+  --------------------------------------------------------------------------------
+  -- Target Wrappers
+  -- Each target is wrapped with an address decoder and an optional pipeline stage.
+  --------------------------------------------------------------------------------
   gen_target: for tgt in 0 to NB_TARGET-1
   generate
     
@@ -131,7 +173,7 @@ begin  -- architecture rtl
         )
       port map(
         cs_o           => tgt_cs    (tgt),
-        sbi_ini_i      => sbi_ini_pipein  ,
+        sbi_ini_i      => sbi_ini_mux     ,
         sbi_tgt_o      => sbi_tgts  (tgt),
         sbi_ini_o      => sbi_inis_pipeout(tgt),
         sbi_tgt_i      => sbi_tgts_pipeout(tgt)
