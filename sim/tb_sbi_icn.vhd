@@ -68,7 +68,7 @@ architecture sim of tb_sbi_icn is
   );
 
   constant C_TARGET_ADDR_ENCODING : string     := "binary";
-  constant C_ALGO_SEL             : string     := "mux"; -- Using MUX for clear response
+  constant C_TARGET_SEL           : string     := "mux"; -- Using MUX for clear response
   constant C_PIPEOUT_ENABLE       : std_logic_vector(C_NB_TARGET-1 downto 0) := (others => '0');
   constant C_PIPEIN_ENABLE        : std_logic  := '0';
 
@@ -100,10 +100,10 @@ begin
       NB_MASTER            => C_NB_MASTER,
       MASTER_SEL           => C_MASTER_SEL,
       NB_TARGET            => C_NB_TARGET,
+      TARGET_SEL           => C_TARGET_SEL,
       TARGET_ID            => C_TARGET_ID,
       TARGET_ADDR_WIDTH    => C_TARGET_ADDR_WIDTH,
       TARGET_ADDR_ENCODING => C_TARGET_ADDR_ENCODING,
-      ALGO_SEL             => C_ALGO_SEL,
       PIPEOUT_ENABLE       => C_PIPEOUT_ENABLE,
       PIPEIN_ENABLE        => C_PIPEIN_ENABLE
     )

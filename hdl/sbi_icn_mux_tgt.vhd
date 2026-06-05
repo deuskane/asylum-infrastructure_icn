@@ -18,8 +18,8 @@ use     asylum.sbi_pkg.all;
 
 entity sbi_icn_mux_tgt is
   generic (
-    NB_TARGET : positive := 1;
-    ALGO_SEL  : string   := "or"
+    NB_TARGET    : positive := 1;
+    TARGET_SEL   : string   := "or"
   );
   port (
     sbi_tgts_i   : in  sbi_tgts_t(NB_TARGET-1 downto 0);
@@ -32,7 +32,7 @@ end entity sbi_icn_mux_tgt;
 architecture rtl of sbi_icn_mux_tgt is
 begin
 
-  gen_algo_sel_or: if ALGO_SEL = "or" generate
+  gen_algo_sel_or: if TARGET_SEL = "or" generate
     process (sbi_tgts_i, sbi_tgt_ds_i) is
       variable v_sbi_tgt : sbi_tgt_t(rdata(sbi_tgt_o.rdata'range));
     begin
@@ -45,7 +45,7 @@ begin
     end process;
   end generate gen_algo_sel_or;
 
-  gen_algo_sel_mux: if ALGO_SEL = "mux" generate
+  gen_algo_sel_mux: if TARGET_SEL = "mux" generate
     process (sbi_tgts_i, tgt_cs_i, sbi_tgt_ds_i) is
       variable v_sbi_tgt : sbi_tgt_t(rdata(sbi_tgt_o.rdata'range));
     begin

@@ -20,16 +20,21 @@ end component sbi_default_slave;
 component sbi_icn is
   
   generic (
-    NAME                 : string     := "sbi_icn";
-    NB_MASTER            : positive   := 1;       -- Number of Initiator Port
-    MASTER_SEL           : string     := "fix";   -- "fix" / "roundrobin"
-    NB_TARGET            : positive   := 1;       -- Number of Target Port
-    TARGET_ID            : sbi_addrs_t;
-    TARGET_ADDR_WIDTH    : naturals_t ;
-    TARGET_ADDR_ENCODING : string     ;           -- "binary" / "one_hot"
-    ALGO_SEL             : string     := "or";    -- "or" / "mux"
-    PIPEOUT_ENABLE       : std_logic_vector(NB_TARGET-1 downto 0) := (others => '0'); -- Pipeline enable per target
-    PIPEIN_ENABLE        : std_logic  := '0'      -- Pipeline enable for input
+    NAME                   : string     := "sbi_icn";
+    NB_MASTER              : positive   := 1;       -- Number of Initiator Port
+    MASTER_SEL             : string     := "fix";   -- "fix" / "roundrobin"
+    NB_TARGET              : positive   := 1;       -- Number of Target Port
+    TARGET_SEL             : string     := "or";    -- "or" / "mux"
+    TARGET_ID              : sbi_addrs_t;
+    TARGET_ADDR_WIDTH      : naturals_t ;
+    TARGET_ADDR_ENCODING   : string     ;           -- "binary" / "one_hot"
+    INTERNAL_DEFAULT_SLAVE : boolean    := True;    -- If True, a default slave is implemented internally.
+                                                    -- If False, the default slave is implemented externally and connected to the last target port (NB_TARGET)
+    PIPEOUT_ENABLE         : std_logic_vector(NB_TARGET-1 downto 0) := (others => '0'); -- Pipeline enable per target
+    PIPEIN_ENABLE          : std_logic  := '0';      -- Pipeline enable for input
+
+    -- Internal generics
+    NB_TARGET_INT          : positive   := NB_TARGET + (1-boolean'pos(INTERNAL_DEFAULT_SLAVE))
     );
 
   port (
@@ -40,9 +45,9 @@ component sbi_icn is
     -- From Bus
     sbi_inis_i          : in    sbi_inis_t (NB_MASTER-1 downto 0);
     sbi_tgts_o          : out   sbi_tgts_t (NB_MASTER-1 downto 0);
-
-    sbi_inis_o          : out   sbi_inis_t (NB_TARGET-1 downto 0);
-    sbi_tgts_i          : in    sbi_tgts_t (NB_TARGET-1 downto 0)
+    
+    sbi_inis_o          : out   sbi_inis_t (NB_TARGET_INT-1 downto 0);
+    sbi_tgts_i          : in    sbi_tgts_t (NB_TARGET_INT-1 downto 0)
 );
 end component sbi_icn;
 
@@ -68,8 +73,8 @@ end component sbi_icn_mux_mst;
 
 component sbi_icn_mux_tgt is
   generic (
-    NB_TARGET : positive := 1;
-    ALGO_SEL  : string   := "or"
+    NB_TARGET    : positive := 1;
+    TARGET_SEL   : string   := "or"
   );
   port (
     sbi_tgts_i   : in  sbi_tgts_t(NB_TARGET-1 downto 0);

@@ -25,16 +25,21 @@ use     asylum.convert_pkg.all;
 entity sbi_icn is
   
   generic (
-    NAME                 : string     := "sbi_icn";
-    NB_MASTER            : positive   := 1;       -- Number of Initiator Port
-    MASTER_SEL           : string     := "fix";   -- "fix" / "roundrobin"
-    NB_TARGET            : positive   := 1;       -- Number of Target Port
-    TARGET_ID            : sbi_addrs_t;
-    TARGET_ADDR_WIDTH    : naturals_t ;
-    TARGET_ADDR_ENCODING : string     ;           -- "binary" / "one_hot"
-    ALGO_SEL             : string     := "or";    -- "or" / "mux"
-    PIPEOUT_ENABLE       : std_logic_vector(NB_TARGET-1 downto 0) := (others => '0'); -- Pipeline enable per target
-    PIPEIN_ENABLE        : std_logic  := '0'      -- Pipeline enable for input
+    NAME                   : string     := "sbi_icn";
+    NB_MASTER              : positive   := 1;       -- Number of Initiator Port
+    MASTER_SEL             : string     := "fix";   -- "fix" / "roundrobin"
+    NB_TARGET              : positive   := 1;       -- Number of Target Port
+    TARGET_SEL             : string     := "or";    -- "or" / "mux"
+    TARGET_ID              : sbi_addrs_t;
+    TARGET_ADDR_WIDTH      : naturals_t ;
+    TARGET_ADDR_ENCODING   : string     ;           -- "binary" / "one_hot"
+    INTERNAL_DEFAULT_SLAVE : boolean    := True;    -- If True, a default slave is implemented internally.
+                                                    -- If False, the default slave is implemented externally and connected to the last target port (NB_TARGET)
+    PIPEOUT_ENABLE         : std_logic_vector(NB_TARGET-1 downto 0) := (others => '0'); -- Pipeline enable per target
+    PIPEIN_ENABLE          : std_logic  := '0';      -- Pipeline enable for input
+
+    -- Internal generics
+    NB_TARGET_INT          : positive   := NB_TARGET + (1-boolean'pos(INTERNAL_DEFAULT_SLAVE))
     );
 
   port (
@@ -45,15 +50,15 @@ entity sbi_icn is
     -- From Bus
     sbi_inis_i          : in    sbi_inis_t (NB_MASTER-1 downto 0);
     sbi_tgts_o          : out   sbi_tgts_t (NB_MASTER-1 downto 0);
-
-    sbi_inis_o          : out   sbi_inis_t (NB_TARGET-1 downto 0);
-    sbi_tgts_i          : in    sbi_tgts_t (NB_TARGET-1 downto 0)
+    
+    sbi_inis_o          : out   sbi_inis_t (NB_TARGET_INT-1 downto 0);
+    sbi_tgts_i          : in    sbi_tgts_t (NB_TARGET_INT-1 downto 0)
 );
 end entity sbi_icn;
 
 architecture rtl of sbi_icn is
 
-  constant TGT_ZEROING      : boolean := ALGO_SEL = "or";
+  constant TGT_ZEROING      : boolean := TARGET_SEL = "or";
 
   signal   sbi_tgts         : sbi_tgts_t (NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
   signal   tgt_cs           : std_logic_vector(NB_TARGET-1 downto 0);
@@ -70,10 +75,10 @@ architecture rtl of sbi_icn is
   signal   sbi_ini_ds       : sbi_ini_t(addr (sbi_inis_i(0).addr'range), 
                                         wdata(sbi_inis_i(0).wdata'range));
   signal   sbi_tgt_ds       : sbi_tgt_t(rdata(SBI_DATA_WIDTH -1 downto 0));
-
-  signal   sbi_inis_pipeout : sbi_inis_t (NB_TARGET-1 downto 0)(addr (sbi_inis_i(0).addr'range), 
+  
+  signal   sbi_inis_pipeout : sbi_inis_t (NB_TARGET_INT-1 downto 0)(addr (sbi_inis_i(0).addr'range), 
                                                                 wdata(sbi_inis_i(0).wdata'range));
-  signal   sbi_tgts_pipeout : sbi_tgts_t (NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
+  signal   sbi_tgts_pipeout : sbi_tgts_t (NB_TARGET_INT-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
 
 begin  -- architecture rtl
 
@@ -100,7 +105,7 @@ begin  -- architecture rtl
   -- Master Selection
   --
   -- Selection of the master initiator to be connected to the target side. Depending on
-  -- the ALGO_SEL generic, the selection is done using an OR of the chip selects
+  -- the TARGET_SEL generic, the selection is done using an OR of the chip selects
   -------------------------------------------------------------------------------
   ins_sbi_icn_mux_mst : sbi_icn_mux_mst
     generic map (
@@ -130,6 +135,7 @@ begin  -- architecture rtl
     sbi_ini_ds.cs <= sbi_ini_mux.cs and not any_cs;
   end process;
 
+  gen_internal_ds: if INTERNAL_DEFAULT_SLAVE generate
   ins_sbi_default_slave : sbi_default_slave
     port map (
       clk_i     => clk_i,
@@ -138,16 +144,24 @@ begin  -- architecture rtl
       sbi_ini_i => sbi_ini_ds,
       sbi_tgt_o => sbi_tgt_ds
     );
+  end generate;
+
+  gen_external_ds: if not INTERNAL_DEFAULT_SLAVE generate
+    sbi_inis_pipeout(NB_TARGET) <= sbi_ini_ds;
+    sbi_tgt_ds                  <= sbi_tgts_pipeout(NB_TARGET);
+    sbi_inis_o(NB_TARGET)       <= sbi_inis_pipeout(NB_TARGET);
+    sbi_tgts_pipeout(NB_TARGET) <= sbi_tgts_i(NB_TARGET);
+  end generate;
 
   --------------------------------------------------------------------------------
   -- Target Mux
   -- Selects the target response to be sent back to the master side. 
-  -- Depending on the ALGO_SEL generic, the selection is done using an OR of the chip selects or a mux.
+  -- Depending on the TARGET_SEL generic, the selection is done using an OR of the chip selects or a mux.
   --------------------------------------------------------------------------------
   ins_sbi_icn_mux_tgt : sbi_icn_mux_tgt
     generic map (
       NB_TARGET    => NB_TARGET,
-      ALGO_SEL     => ALGO_SEL
+      TARGET_SEL     => TARGET_SEL
     )
     port map (
       sbi_tgts_i   => sbi_tgts,

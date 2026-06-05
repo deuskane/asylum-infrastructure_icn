@@ -42,7 +42,7 @@ The main interconnect module that routes SBI transactions from an initiator port
 | `TARGET_ID` | sbi_addrs_t | - | Array of target IDs for address decoding (one per target) |
 | `TARGET_ADDR_WIDTH` | naturals_t | - | Array of address widths for each target (defines the IP address space size) |
 | `TARGET_ADDR_ENCODING` | string | - | Address encoding scheme: `"binary"` for binary ID encoding or `"one_hot"` for one-hot encoding |
-| `ALGO_SEL` | string | "or" | Selection algorithm: `"or"` for OR-based response or `"mux"` for multiplexed response |
+| `TARGET_SEL` | string | "or" | Selection algorithm: `"or"` for OR-based response or `"mux"` for multiplexed response |
 
 #### Ports
 
@@ -65,8 +65,8 @@ The `sbi_icn` module performs the following functions:
 2. **Request Routing:** Routes the incoming SBI initiator request (`sbi_ini_i`) to all target ports (`sbi_inis_o`). Each target's chip select is determined by its TARGET_ID matching the decoded address.
 
 3. **Response Aggregation:** Combines responses from all targets into a single response sent back to the initiator:
-   - **OR Algorithm** (`ALGO_SEL="or"`): Uses bitwise OR to aggregate all target responses. This assumes open-drain/wired-OR protocol where multiple drivers can drive simultaneously.
-   - **MUX Algorithm** (`ALGO_SEL="mux"`): Multiplexes the response from the selected target. Only the target with matching ID drives the response; others are zeroed.
+   - **OR Algorithm** (`TARGET_SEL="or"`): Uses bitwise OR to aggregate all target responses. This assumes open-drain/wired-OR protocol where multiple drivers can drive simultaneously.
+   - **MUX Algorithm** (`TARGET_SEL="mux"`): Multiplexes the response from the selected target. Only the target with matching ID drives the response; others are zeroed.
 
 4. **Address Encoding:** 
    - **Binary**: TARGET_ID is treated as a numerical value that matches against the decoded address MSBs.
