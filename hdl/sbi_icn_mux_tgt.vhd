@@ -16,7 +16,7 @@ use     ieee.numeric_std.all;
 library asylum;
 use     asylum.sbi_pkg.all;
 
-entity sbi_icn_mux is
+entity sbi_icn_mux_tgt is
   generic (
     NB_TARGET : positive := 1;
     ALGO_SEL  : string   := "or"
@@ -27,9 +27,9 @@ entity sbi_icn_mux is
     tgt_cs_i     : in  std_logic_vector(NB_TARGET-1 downto 0);
     sbi_tgt_o    : out sbi_tgt_t
   );
-end entity sbi_icn_mux;
+end entity sbi_icn_mux_tgt;
 
-architecture rtl of sbi_icn_mux is
+architecture rtl of sbi_icn_mux_tgt is
 begin
 
   gen_algo_sel_or: if ALGO_SEL = "or" generate
