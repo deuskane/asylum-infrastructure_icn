@@ -1,3 +1,17 @@
+-------------------------------------------------------------------------------
+-- Title      : tb_sbi_icn_pkg
+-- Project    : Asylum
+-------------------------------------------------------------------------------
+-- Description: Test Case 1 for SBI Interconnect Testbench: Simple access
+-------------------------------------------------------------------------------
+-- Copyright (c) 2026
+-------------------------------------------------------------------------------
+-- Revisions  :
+-- Date        Version  Author   Description
+-- 2026-06-05  1.0      mrosiere Created
+-- 2026-06-05  1.1      mrosiere Updated comments
+-------------------------------------------------------------------------------
+
 library ieee;
 use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
