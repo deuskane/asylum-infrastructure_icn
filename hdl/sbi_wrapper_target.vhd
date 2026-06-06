@@ -121,7 +121,7 @@ begin  -- rtl
     tgt_rdata          <= sbi_tgt_i.rdata when cs='1' else
                           CST0(tgt_rdata'range);
     tgt_ready          <= sbi_tgt_i.ready when cs='1' else
-                          '1';
+                          '0';
   end generate gen_tgt_zeroing;
 
   gen_tgt_zeroing_b: if TGT_ZEROING = false

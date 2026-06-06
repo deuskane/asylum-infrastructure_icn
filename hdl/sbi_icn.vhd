@@ -161,7 +161,7 @@ begin  -- architecture rtl
   ins_sbi_icn_mux_tgt : sbi_icn_mux_tgt
     generic map (
       NB_TARGET    => NB_TARGET,
-      TARGET_SEL     => TARGET_SEL
+      TARGET_SEL   => TARGET_SEL
     )
     port map (
       sbi_tgts_i   => sbi_tgts,
@@ -206,28 +206,31 @@ begin  -- architecture rtl
         sbi_ini_o => sbi_inis_o(tgt),
         sbi_tgt_i => sbi_tgts_i(tgt)
       );
+  end generate gen_target;
 
-        
 -- pragma translate_off
-
-  process is
+  process
   begin  -- process
     wait for 1 ps;
-    
-    report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Target["&to_hstring(TARGET_ID(tgt))&"] Address : "&integer'image(TARGET_ADDR_WIDTH(tgt)) severity note;
 
-    if (TARGET_ADDR_ENCODING = "one_hot")
-    then
-      report "  * Index : " &integer'image(onehot_to_integer(TARGET_ID(tgt))) severity note;
-      
-    end if;
-    
+    report "["&NAME&"] NB_MASTER                : " & integer'image(NB_MASTER) severity note;
+    report "["&NAME&"]   * MASTER_SEL           : " & MASTER_SEL severity note;
+    report "["&NAME&"] NB_TARGET                : " & integer'image(NB_TARGET) severity note;
+    report "["&NAME&"]   * TARGET_SEL           : " & TARGET_SEL severity note;
+    report "["&NAME&"]   * TARGET_ADDR_ENCODING : " & TARGET_ADDR_ENCODING severity note;
+    report "["&NAME&"] INTERNAL_DEFAULT_SLAVE   : " & boolean'image(INTERNAL_DEFAULT_SLAVE) severity note;
+
+    for tgt in 0 to NB_TARGET-1 loop
+      report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Target["&to_hstring(TARGET_ID(tgt))&"] Address : "&integer'image(TARGET_ADDR_WIDTH(tgt)) severity note;
+
+      if (TARGET_ADDR_ENCODING = "one_hot")
+      then
+        report "  * Index : " &integer'image(onehot_to_integer(TARGET_ID(tgt))) severity note;
+      end if;
+    end loop;
 
     wait;
   end process;
-
 -- pragma translate_on  
 
-  end generate gen_target;
-  
 end architecture rtl;
