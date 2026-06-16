@@ -19,6 +19,7 @@ use     asylum.sbi_pkg.all;
 
 entity sbi_icn_mux_mst is
   generic (
+    NAME       : string   := "sbi_icn";
     NB_MASTER  : positive := 1;
     MASTER_SEL : string   := "fix" -- "fix" / "roundrobin"
   );

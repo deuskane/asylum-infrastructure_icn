@@ -18,6 +18,7 @@ use     asylum.sbi_pkg.all;
 
 entity sbi_icn_mux_tgt is
   generic (
+    NAME         : string   := "sbi_icn";
     NB_TARGET    : positive := 1;
     TARGET_SEL   : string   := "or"
   );
@@ -41,6 +42,7 @@ begin
       for tgt in 0 to NB_TARGET-1 loop
         v_sbi_tgt := v_sbi_tgt or sbi_tgts_i(tgt);
       end loop;
+      v_sbi_tgt.info.name := to_sbi_name(NAME);
       sbi_tgt_o <= v_sbi_tgt;
     end process;
   end generate gen_algo_sel_or;
@@ -56,6 +58,7 @@ begin
           v_sbi_tgt := sbi_tgts_i(tgt);
         end if;
       end loop;
+      v_sbi_tgt.info.name := to_sbi_name(NAME);
       sbi_tgt_o <= v_sbi_tgt;
     end process;
   end generate gen_algo_sel_mux;

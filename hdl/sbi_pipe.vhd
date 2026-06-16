@@ -19,8 +19,9 @@ use     asylum.sbi_pkg.all;
 
 entity sbi_pipe is
   generic 
-  (ENABLE              : boolean := true
-  ;VERBOSE             : boolean := false
+  (NAME         : string  := "sbi_icn";
+   ENABLE       : boolean := true;
+   VERBOSE      : boolean := false
   );
   port 
   (clk_i               : in std_logic
@@ -147,9 +148,9 @@ begin
           if sbi_ini_o.cs = '1' and sbi_tgt_i.ready = '1'
           then
               if sbi_ini_o.we = '1' then
-                report "["&sbi_tgt_i.info.name& "] Write @0x" & to_hstring(sbi_ini_o.addr) & " 0x" & to_hstring(sbi_ini_o.wdata) severity note;
+                report "[" & NAME & "] Write @0x" & to_hstring(sbi_ini_o.addr) & " 0x" & to_hstring(sbi_ini_o.wdata) severity note;
               else -- Read
-                report "["&sbi_tgt_i.info.name& "] Read  @0x" & to_hstring(sbi_ini_o.addr) & " 0x" & to_hstring(sbi_tgt_i.rdata) severity note;
+                report "[" & NAME & "] Read  @0x" & to_hstring(sbi_ini_o.addr) & " 0x" & to_hstring(sbi_tgt_i.rdata) severity note;
               end if;
           end if;
         end if;

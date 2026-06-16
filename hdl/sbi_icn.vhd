@@ -36,10 +36,8 @@ entity sbi_icn is
     INTERNAL_DEFAULT_SLAVE : boolean    := True;    -- If True, a default slave is implemented internally.
                                                     -- If False, the default slave is implemented externally and connected to the last target port (NB_TARGET)
     PIPEOUT_ENABLE         : std_logic_vector(NB_TARGET-1 downto 0) := (others => '0'); -- Pipeline enable per target
-    PIPEIN_ENABLE          : std_logic  := '0';      -- Pipeline enable for input
+    PIPEIN_ENABLE          : std_logic  := '0'       -- Pipeline enable for input
 
-    -- Internal generics
-    NB_TARGET_INT          : positive   := NB_TARGET + (1-boolean'pos(INTERNAL_DEFAULT_SLAVE))
     );
 
   port (
@@ -51,34 +49,41 @@ entity sbi_icn is
     sbi_inis_i          : in    sbi_inis_t (NB_MASTER-1 downto 0);
     sbi_tgts_o          : out   sbi_tgts_t (NB_MASTER-1 downto 0);
     
-    sbi_inis_o          : out   sbi_inis_t (NB_TARGET_INT-1 downto 0);
-    sbi_tgts_i          : in    sbi_tgts_t (NB_TARGET_INT-1 downto 0)
+    sbi_inis_o          : out   sbi_inis_t (NB_TARGET-1 downto 0);
+    sbi_tgts_i          : in    sbi_tgts_t (NB_TARGET-1 downto 0)
 );
 end entity sbi_icn;
 
 architecture rtl of sbi_icn is
 
-  constant TGT_ZEROING      : boolean := TARGET_SEL = "or";
+  -- Constants
+  constant NB_TARGET_INT    : positive   := NB_TARGET - (1-boolean'pos(INTERNAL_DEFAULT_SLAVE));
+  constant TGT_ZEROING      : boolean    := TARGET_SEL = "or";
 
-  signal   sbi_tgts         : sbi_tgts_t (NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
-  signal   tgt_cs           : std_logic_vector(NB_TARGET-1 downto 0);
-
-  signal   sbi_inis_pipein  : sbi_inis_t (NB_MASTER-1 downto 0)(addr(sbi_inis_i(0).addr'range), 
+  -- Input Pipe
+  signal   sbi_inis_pipein  : sbi_inis_t (NB_MASTER-1 downto 0)(addr (sbi_inis_i(0).addr'range), 
                                                                 wdata(sbi_inis_i(0).wdata'range));
   signal   sbi_tgts_pipein  : sbi_tgts_t (NB_MASTER-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
 
+  -- Master Selection
   signal   sbi_ini_mux      : sbi_ini_t(addr (sbi_inis_i(0).addr'range), 
                                         wdata(sbi_inis_i(0).wdata'range));
   signal   sbi_tgt_mux      : sbi_tgt_t(rdata(SBI_DATA_WIDTH -1 downto 0));
 
-  signal   any_cs           : std_logic;
+  -- Default Slave
   signal   sbi_ini_ds       : sbi_ini_t(addr (sbi_inis_i(0).addr'range), 
                                         wdata(sbi_inis_i(0).wdata'range));
   signal   sbi_tgt_ds       : sbi_tgt_t(rdata(SBI_DATA_WIDTH -1 downto 0));
   
-  signal   sbi_inis_pipeout : sbi_inis_t (NB_TARGET_INT-1 downto 0)(addr (sbi_inis_i(0).addr'range), 
+  -- Target Selection
+  signal   tgt_cs           : std_logic_vector(NB_TARGET-1 downto 0);
+  signal   any_cs           : std_logic;
+  signal   sbi_tgts         : sbi_tgts_t (NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
+
+  -- Output Pipe 
+  signal   sbi_inis_pipeout : sbi_inis_t (NB_TARGET-1 downto 0)(addr (sbi_inis_i(0).addr'range), 
                                                                 wdata(sbi_inis_i(0).wdata'range));
-  signal   sbi_tgts_pipeout : sbi_tgts_t (NB_TARGET_INT-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
+  signal   sbi_tgts_pipeout : sbi_tgts_t (NB_TARGET-1 downto 0)(rdata(SBI_DATA_WIDTH -1 downto 0));
 
 begin  -- architecture rtl
 
@@ -88,6 +93,7 @@ begin  -- architecture rtl
   gen_master_pipe: for m in 0 to NB_MASTER-1 generate
     ins_sbi_pipe_input : sbi_pipe
       generic map (
+        NAME      => NAME,
         ENABLE    => PIPEIN_ENABLE = '1'
       )
       port map (
@@ -109,6 +115,7 @@ begin  -- architecture rtl
   -------------------------------------------------------------------------------
   ins_sbi_icn_mux_mst : sbi_icn_mux_mst
     generic map (
+      NAME         => NAME,
       NB_MASTER    => NB_MASTER,
       MASTER_SEL   => MASTER_SEL
     )
@@ -126,7 +133,8 @@ begin  -- architecture rtl
   -- Default slave
   --------------------------------------------------------------------------------
   -- Detection if at least one target is addressed
-  any_cs        <= or tgt_cs;
+  -- Don't take into account the default slave if it is implemented internally
+  any_cs        <= or tgt_cs(NB_TARGET_INT-1 downto 0);
   
   -- Signal preparation for the default slave
   process (ALL) is
@@ -135,8 +143,12 @@ begin  -- architecture rtl
     sbi_ini_ds.cs <= sbi_ini_mux.cs and not any_cs;
   end process;
 
-  gen_internal_ds: if INTERNAL_DEFAULT_SLAVE generate
+  gen_internal_ds: if INTERNAL_DEFAULT_SLAVE 
+  generate
   ins_sbi_default_slave : sbi_default_slave
+    generic map (
+      NAME           => NAME
+    )
     port map (
       clk_i     => clk_i,
       cke_i     => cke_i,
@@ -145,14 +157,32 @@ begin  -- architecture rtl
       sbi_tgt_o => sbi_tgt_ds
     );
   end generate;
+ 
+  gen_external_ds: if not INTERNAL_DEFAULT_SLAVE 
+  generate
+      -- Default slave is implemented externally and connected to the last target port (NB_TARGET)
 
-  gen_external_ds: if not INTERNAL_DEFAULT_SLAVE generate
-    sbi_inis_pipeout(NB_TARGET) <= sbi_ini_ds;
-    sbi_tgt_ds                  <= sbi_tgts_pipeout(NB_TARGET);
-    sbi_inis_o(NB_TARGET)       <= sbi_inis_pipeout(NB_TARGET);
-    sbi_tgts_pipeout(NB_TARGET) <= sbi_tgts_i(NB_TARGET);
+      ins_sbi_wrapper_target : sbi_wrapper_target
+      generic map(
+        NAME           => NAME,
+        SIZE_DATA      => SBI_DATA_WIDTH ,
+        SIZE_ADDR_IP   => TARGET_ADDR_WIDTH(NB_TARGET-1),
+        ID             => TARGET_ID        (NB_TARGET-1),
+        ADDR_ENCODING  => TARGET_ADDR_ENCODING,
+        TGT_ZEROING    => TGT_ZEROING
+        )
+      port map(
+        cs_o           => tgt_cs    (NB_TARGET-1),
+        sbi_ini_i      => sbi_ini_ds    ,
+        sbi_tgt_o      => sbi_tgts  (NB_TARGET-1),
+        sbi_ini_o      => sbi_inis_pipeout(NB_TARGET-1),
+        sbi_tgt_i      => sbi_tgts_pipeout(NB_TARGET-1)
+        );
+
+        sbi_tgt_ds <= sbi_tgt_null(sbi_tgt_ds);
+
   end generate;
-
+ 
   --------------------------------------------------------------------------------
   -- Target Mux
   -- Selects the target response to be sent back to the master side. 
@@ -160,6 +190,7 @@ begin  -- architecture rtl
   --------------------------------------------------------------------------------
   ins_sbi_icn_mux_tgt : sbi_icn_mux_tgt
     generic map (
+      NAME         => NAME,
       NB_TARGET    => NB_TARGET,
       TARGET_SEL   => TARGET_SEL
     )
@@ -172,13 +203,14 @@ begin  -- architecture rtl
   
   --------------------------------------------------------------------------------
   -- Target Wrappers
-  -- Each target is wrapped with an address decoder and an optional pipeline stage.
+  -- Each target is wrapped with an address decoder
   --------------------------------------------------------------------------------
-  gen_target: for tgt in 0 to NB_TARGET-1
+  gen_target: for tgt in 0 to NB_TARGET_INT-1
   generate
     
     ins_sbi_wrapper_target : sbi_wrapper_target
       generic map(
+        NAME           => NAME,
         SIZE_DATA      => SBI_DATA_WIDTH ,
         SIZE_ADDR_IP   => TARGET_ADDR_WIDTH(tgt),
         ID             => TARGET_ID        (tgt),
@@ -187,14 +219,21 @@ begin  -- architecture rtl
         )
       port map(
         cs_o           => tgt_cs    (tgt),
-        sbi_ini_i      => sbi_ini_mux     ,
+        sbi_ini_i      => sbi_ini_mux    ,
         sbi_tgt_o      => sbi_tgts  (tgt),
         sbi_ini_o      => sbi_inis_pipeout(tgt),
         sbi_tgt_i      => sbi_tgts_pipeout(tgt)
         );
-    
-    ins_sbi_pipe_target : sbi_pipe
+  end generate gen_target;
+
+  -------------------------------------------------------------------------------
+  -- Optional pipeline stage.
+  --------------------------------------------------------------------------------
+  gen_pipeout: for tgt in 0 to NB_TARGET-1
+  generate
+      ins_sbi_pipe_target : sbi_pipe
       generic map (
+        NAME      => NAME,  
         ENABLE    => PIPEOUT_ENABLE(tgt) = '1'
       )
       port map (
@@ -206,7 +245,7 @@ begin  -- architecture rtl
         sbi_ini_o => sbi_inis_o(tgt),
         sbi_tgt_i => sbi_tgts_i(tgt)
       );
-  end generate gen_target;
+  end generate gen_pipeout;
 
 -- pragma translate_off
   process

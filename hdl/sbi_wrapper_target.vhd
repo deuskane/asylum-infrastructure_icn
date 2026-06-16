@@ -33,6 +33,7 @@ use     asylum.convert_pkg.all;
 entity sbi_wrapper_target is
   -- =====[ Parameters ]==========================
   generic (
+    NAME           : string  := "sbi_icn";
     SIZE_DATA      : natural := 8;
     SIZE_ADDR_IP   : natural := 0;
     ID             : std_logic_vector (SBI_ADDR_WIDTH-1 downto 0) := (others => '0');

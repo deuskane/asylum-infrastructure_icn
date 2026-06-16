@@ -18,6 +18,9 @@ library asylum;
 use     asylum.sbi_pkg.all;
 
 entity sbi_default_slave is
+  generic (
+    NAME         : string     := "sbi_icn"
+  );
   port (
     clk_i               : in std_logic;
     cke_i               : in std_logic;
@@ -34,7 +37,7 @@ begin
   -- Default Slave is ready for any access and returns 0 data with an info name "Default" for debugging purposes
   sbi_tgt_o.ready     <= sbi_ini_i.cs;
   sbi_tgt_o.rdata     <= (sbi_tgt_o.rdata'range => '0');
-  sbi_tgt_o.info.name <= to_sbi_name("Default");
+  sbi_tgt_o.info.name <= to_sbi_name(NAME & ".default_slave");
 
 -- pragma translate_off
   process (clk_i) is
@@ -43,7 +46,7 @@ begin
       -- Reset is not checked here because we want to see access attempts
       -- even if the system is being initialized (depending on needs)
       if cke_i = '1' and sbi_ini_i.cs = '1' then
-        report "SBI Interconnect: Access to Default Slave at address 0x" & to_hstring(sbi_ini_i.addr) severity note;
+        report "[" & NAME & "] SBI Interconnect: Access to Default Slave at address 0x" & to_hstring(sbi_ini_i.addr) severity note;
       end if;
     end if;
   end process;
