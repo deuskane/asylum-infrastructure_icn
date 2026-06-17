@@ -18,6 +18,7 @@ library ieee;
 use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library asylum;
+use     asylum.logic_pkg.all;
 use     asylum.sbi_pkg.all;
 use     asylum.icn_pkg.all;
 use     asylum.convert_pkg.all;
@@ -265,7 +266,34 @@ begin  -- architecture rtl
       if (TARGET_ADDR_ENCODING = "one_hot")
       then
         report "  * Index : " &integer'image(onehot_to_integer(TARGET_ID(tgt))) severity note;
+        if (count_ones(TARGET_ID(tgt)) /= 1)
+        then
+           report "["&NAME&"] Error: Target " & integer'image(tgt) & " ID must be one-hot encoded" severity failure;
+        end if;
       end if;
+
+      if not INTERNAL_DEFAULT_SLAVE and tgt = NB_TARGET-1 then
+        if unsigned(TARGET_ID(tgt)) /= 0 then
+           report "["&NAME&"] Error: External Default Slave (last target) must have ID=0" severity failure;
+        end if;
+        if TARGET_ADDR_WIDTH(tgt) /= sbi_inis_i(0).addr'length then
+           report "["&NAME&"] Error: External Default Slave (last target) must have ADDR_WIDTH=" & integer'image(sbi_inis_i(0).addr'length) severity failure;
+        end if;
+      end if;
+
+      for tgt2 in tgt+1 to NB_TARGET_INT-1 
+      loop
+        if (unsigned(TARGET_ID(tgt))  <= (unsigned(TARGET_ID(tgt2)) + 2**TARGET_ADDR_WIDTH(tgt2) - 1)) and
+           (unsigned(TARGET_ID(tgt2)) <= (unsigned(TARGET_ID(tgt))  + 2**TARGET_ADDR_WIDTH(tgt)  - 1))
+        then
+           report "["&NAME&"] Error: Overlap detected between:" &
+                  " Target " & integer'image(tgt)  & " [" & to_hstring(TARGET_ID(tgt))  & " .. " & to_hstring(unsigned(TARGET_ID(tgt))  + 2**TARGET_ADDR_WIDTH(tgt)  - 1) & "]" &
+                  " and " &
+                  " Target " & integer'image(tgt2) & " [" & to_hstring(TARGET_ID(tgt2)) & " .. " & to_hstring(unsigned(TARGET_ID(tgt2)) + 2**TARGET_ADDR_WIDTH(tgt2) - 1) & "]"
+                  severity failure;
+        end if;
+      end loop;
+
     end loop;
 
     wait;
