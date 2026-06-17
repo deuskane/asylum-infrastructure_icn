@@ -253,6 +253,7 @@ begin  -- architecture rtl
   begin  -- process
     wait for 1 ps;
 
+    -- Display general Interconnect configuration
     report "["&NAME&"] NB_MASTER                : " & integer'image(NB_MASTER) severity note;
     report "["&NAME&"]   * MASTER_SEL           : " & MASTER_SEL severity note;
     report "["&NAME&"] NB_TARGET                : " & integer'image(NB_TARGET) severity note;
@@ -260,36 +261,51 @@ begin  -- architecture rtl
     report "["&NAME&"]   * TARGET_ADDR_ENCODING : " & TARGET_ADDR_ENCODING severity note;
     report "["&NAME&"] INTERNAL_DEFAULT_SLAVE   : " & boolean'image(INTERNAL_DEFAULT_SLAVE) severity note;
 
+    -- Check each target configuration and address range
     for tgt in 0 to NB_TARGET-1 loop
-      report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Target["&to_hstring(TARGET_ID(tgt))&"] Address : "&integer'image(TARGET_ADDR_WIDTH(tgt)) severity note;
+      report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Target["&to_hstring(TARGET_ID(tgt))&" .. "&to_hstring(unsigned(TARGET_ID(tgt)) + 2**TARGET_ADDR_WIDTH(tgt) - 1)&"] Address : "&integer'image(TARGET_ADDR_WIDTH(tgt)) severity note;
 
-      if (TARGET_ADDR_ENCODING = "one_hot")
-      then
-        report "  * Index : " &integer'image(onehot_to_integer(TARGET_ID(tgt))) severity note;
-        if (count_ones(TARGET_ID(tgt)) /= 1)
-        then
-           report "["&NAME&"] Error: Target " & integer'image(tgt) & " ID must be one-hot encoded" severity failure;
-        end if;
-      end if;
+      case TARGET_ADDR_ENCODING is
 
+        when "one_hot" =>
+          report "  * Index : " &integer'image(onehot_to_integer(TARGET_ID(tgt))) severity note;
+          -- Ensure only one bit is set for one-hot encoding
+          if (count_ones(TARGET_ID(tgt)) /= 1)
+          then
+             report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Error: Target " & integer'image(tgt) & " ID must be one-hot encoded" severity failure;
+          end if;
+        
+        when "binary" =>
+          -- Ensure the base address is aligned with the address width
+          if (unsigned(TARGET_ID(tgt)(TARGET_ADDR_WIDTH(tgt)-1 downto 0)) /= 0)
+          then
+             report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Error: Target " & integer'image(tgt) & " ID must have the lower " & integer'image(TARGET_ADDR_WIDTH(tgt)) & " bits set to 0" severity failure;
+          end if;
+        
+        when others =>
+          null;
+      end case;
+
+      -- Specific checks for External Default Slave configuration
       if not INTERNAL_DEFAULT_SLAVE and tgt = NB_TARGET-1 then
         if unsigned(TARGET_ID(tgt)) /= 0 then
-           report "["&NAME&"] Error: External Default Slave (last target) must have ID=0" severity failure;
+           report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Error: External Default Slave (last target) must have ID=0" severity failure;
         end if;
         if TARGET_ADDR_WIDTH(tgt) /= sbi_inis_i(0).addr'length then
-           report "["&NAME&"] Error: External Default Slave (last target) must have ADDR_WIDTH=" & integer'image(sbi_inis_i(0).addr'length) severity failure;
+           report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Error: External Default Slave (last target) must have ADDR_WIDTH=" & integer'image(sbi_inis_i(0).addr'length) severity failure;
         end if;
       end if;
 
+      -- Check for overlapping address ranges between targets
       for tgt2 in tgt+1 to NB_TARGET_INT-1 
       loop
         if (unsigned(TARGET_ID(tgt))  <= (unsigned(TARGET_ID(tgt2)) + 2**TARGET_ADDR_WIDTH(tgt2) - 1)) and
            (unsigned(TARGET_ID(tgt2)) <= (unsigned(TARGET_ID(tgt))  + 2**TARGET_ADDR_WIDTH(tgt)  - 1))
         then
            report "["&NAME&"] Error: Overlap detected between:" &
-                  " Target " & integer'image(tgt)  & " [" & to_hstring(TARGET_ID(tgt))  & " .. " & to_hstring(unsigned(TARGET_ID(tgt))  + 2**TARGET_ADDR_WIDTH(tgt)  - 1) & "]" &
+                  " Target " & integer'image(tgt)  & " (" & sbi_tgts_i(tgt).info.name  & ") [" & to_hstring(TARGET_ID(tgt))  & " .. " & to_hstring(unsigned(TARGET_ID(tgt))  + 2**TARGET_ADDR_WIDTH(tgt)  - 1) & "]" &
                   " and " &
-                  " Target " & integer'image(tgt2) & " [" & to_hstring(TARGET_ID(tgt2)) & " .. " & to_hstring(unsigned(TARGET_ID(tgt2)) + 2**TARGET_ADDR_WIDTH(tgt2) - 1) & "]"
+                  " Target " & integer'image(tgt2) & " (" & sbi_tgts_i(tgt2).info.name & ") [" & to_hstring(TARGET_ID(tgt2)) & " .. " & to_hstring(unsigned(TARGET_ID(tgt2)) + 2**TARGET_ADDR_WIDTH(tgt2) - 1) & "]"
                   severity failure;
         end if;
       end loop;
