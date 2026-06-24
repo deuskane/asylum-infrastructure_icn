@@ -265,26 +265,24 @@ begin  -- architecture rtl
     for tgt in 0 to NB_TARGET-1 loop
       report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Target["&to_hstring(TARGET_ID(tgt))&" .. "&to_hstring(unsigned(TARGET_ID(tgt)) + 2**TARGET_ADDR_WIDTH(tgt) - 1)&"] Address : "&integer'image(TARGET_ADDR_WIDTH(tgt)) severity note;
 
-      case TARGET_ADDR_ENCODING is
+      -- Ensure only one bit is set for one-hot encoding
+      if (TARGET_ADDR_ENCODING = "one_hot")
+      then
+        report "  * Index : " &integer'image(onehot_to_integer(TARGET_ID(tgt))) severity note;
+        if (count_ones(TARGET_ID(tgt)) /= 1)
+        then
+           report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Error: Target " & integer'image(tgt) & " ID must be one-hot encoded" severity failure;
+        end if;
+      end if;
 
-        when "one_hot" =>
-          report "  * Index : " &integer'image(onehot_to_integer(TARGET_ID(tgt))) severity note;
-          -- Ensure only one bit is set for one-hot encoding
-          if (count_ones(TARGET_ID(tgt)) /= 1)
-          then
-             report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Error: Target " & integer'image(tgt) & " ID must be one-hot encoded" severity failure;
-          end if;
-        
-        when "binary" =>
-          -- Ensure the base address is aligned with the address width
-          if (unsigned(TARGET_ID(tgt)(TARGET_ADDR_WIDTH(tgt)-1 downto 0)) /= 0)
-          then
-             report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Error: Target " & integer'image(tgt) & " ID must have the lower " & integer'image(TARGET_ADDR_WIDTH(tgt)) & " bits set to 0" severity failure;
-          end if;
-        
-        when others =>
-          null;
-      end case;
+      -- Ensure the base address is aligned with the address width
+      if (TARGET_ADDR_ENCODING = "binary")
+      then
+        if (unsigned(TARGET_ID(tgt)(TARGET_ADDR_WIDTH(tgt)-1 downto 0)) /= 0)
+        then
+           report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Error: Target " & integer'image(tgt) & " ID must have the lower " & integer'image(TARGET_ADDR_WIDTH(tgt)) & " bits set to 0" severity failure;
+        end if;
+      end if;
 
       -- Specific checks for External Default Slave configuration
       if not INTERNAL_DEFAULT_SLAVE and tgt = NB_TARGET-1 then
