@@ -1,3 +1,5 @@
+[![CI](https://github.com/deuskane/asylum-infrastructure_icn/actions/workflows/ci.yml/badge.svg)](https://github.com/deuskane/asylum-infrastructure_icn/actions/workflows/ci.yml)
+
 # asylum-infrastructure_icn
 
 Interconnection component based on OR-Bus protocol for the Asylum project. This repository contains an SBI (Serial Bus Interface) interconnect infrastructure that routes transactions between initiator ports and multiple target ports.
