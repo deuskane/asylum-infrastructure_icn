@@ -9,6 +9,7 @@
 -- Revisions  :
 -- Date        Version  Author   Description
 -- 2026-06-05  1.0      mrosiere Created
+-- 2026-10-05  1.1      mrosiere Add PIPEIN / PIPEOUT generics (sbi_pipe coverage)
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -28,11 +29,20 @@ library bitvis_vip_sbi;
 use     bitvis_vip_sbi.sbi_bfm_pkg.all;
 
 entity tb_sbi_icn is
+  generic (
+    PIPEIN  : boolean := false; -- true: sbi_pipe stage on every master port (PIPEIN_ENABLE  = '1')
+    PIPEOUT : boolean := false  -- true: sbi_pipe stage on every target port (PIPEOUT_ENABLE = "111")
+    );
 end entity tb_sbi_icn;
 
 architecture sim of tb_sbi_icn is
 
   constant C_SCOPE        : string := "TB_SBI_ICN";
+
+  function bool_to_sl (b : boolean) return std_logic is
+  begin
+    if b then return '1'; else return '0'; end if;
+  end function bool_to_sl;
   use work.tb_sbi_icn_pkg.all;
   use work.tb_sbi_icn_suite_pkg.all;
 
@@ -69,8 +79,8 @@ architecture sim of tb_sbi_icn is
 
   constant C_TARGET_ADDR_ENCODING : string     := "binary";
   constant C_TARGET_SEL           : string     := "mux"; -- Using MUX for clear response
-  constant C_PIPEOUT_ENABLE       : std_logic_vector(C_NB_TARGET-1 downto 0) := (others => '0');
-  constant C_PIPEIN_ENABLE        : std_logic  := '0';
+  constant C_PIPEOUT_ENABLE       : std_logic_vector(C_NB_TARGET-1 downto 0) := (others => bool_to_sl(PIPEOUT));
+  constant C_PIPEIN_ENABLE        : std_logic  := bool_to_sl(PIPEIN);
 
   -- SBI Bus Signals
   -- Assuming sbi_ini_t and sbi_tgt_t are defined with SBI_ADDR_WIDTH and SBI_DATA_WIDTH in sbi_pkg

@@ -1,3 +1,4 @@
 default   : Default Target
 sim_basic : Simulation of basic unit tests
+sim_pipe  : Simulation of basic unit tests with sbi_pipe on all master and target ports
 

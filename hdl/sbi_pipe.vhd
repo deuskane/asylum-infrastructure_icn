@@ -9,6 +9,8 @@
 -- Revisions  :
 -- Date        Version  Author   Description
 -- 2026/05/22  1.0      mrosiere Created
+-- 2026/10/05  1.1      mrosiere Fix reset condition of the protocol check
+--                               (was only evaluated during reset)
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -109,9 +111,10 @@ begin
 -- pragma translate_off
     -- Verification of protocol compliance: 
     -- The initiator must maintain the request signals stable while the transaction is pending
+    -- transaction_error_q is a sticky flag (visible in the waveform) set on the first violation
     process (clk_i,arst_b_i) is
     begin
-      if arst_b_i = '1' 
+      if arst_b_i = '0' 
       then
         transaction_error_q <= '0';
       elsif rising_edge(clk_i)
@@ -120,9 +123,12 @@ begin
           
           if state_q = PENDING and sbi_tgt_i.ready = '0' 
           then
-            transaction_error_q <= '1';
+            if sbi_ini_i /= sbi_ini_o
+            then
+              transaction_error_q <= '1';
+            end if;
             assert sbi_ini_i = sbi_ini_o
-              report "SBI Pipe: Initiator changed request during pending transaction" severity error;
+              report "[" & NAME & "] SBI Pipe: Initiator changed request during pending transaction" severity error;
           end if;
         end if;
       end if;

@@ -24,9 +24,11 @@ CAPI=2:
 # 2026-06-05  1.3.2    mrosiere Add default slave dedicated port option
 # 2026-08-16  1.3.3    mrosiere Fix default slave dedicated port
 #                               Add name in all instances
+# 2026-10-05  1.3.4    mrosiere Fix reset condition of sbi_pipe protocol check
+#                               Add sim_pipe target (sbi_pipe on all ports)
 #-----------------------------------------------------------------------------
 
-name        : asylum:infrastructure:icn:1.3.3
+name        : asylum:infrastructure:icn:1.3.4
 description : Interconnection
 
 #=========================================
@@ -89,4 +91,37 @@ targets:
     tools :
       ghdl :
         analyze_options : ["-Wall","-fsynopsys","-frelaxed","--no-vital-checks"]
-        run_options     : ["--fst=dut.fst","--ieee-asserts=disable"]
+        run_options     : ["--fst=dut.fst","--ieee-asserts=disable","--assert-level=error"]
+
+  #---------------------------------------
+  sim_pipe:
+  #---------------------------------------
+    << : *default
+    description     : Simulation of basic unit tests with sbi_pipe on all master and target ports
+    filesets_append :
+      - sim_basic
+    toplevel        : tb_sbi_icn
+    parameters      :
+      - PIPEIN=true
+      - PIPEOUT=true
+    default_tool    : ghdl
+    tools :
+      ghdl :
+        analyze_options : ["-Wall","-fsynopsys","-frelaxed","--no-vital-checks"]
+        run_options     : ["--fst=dut.fst","--ieee-asserts=disable","--assert-level=error"]
+
+#=========================================
+parameters :
+#=========================================
+
+  PIPEIN :
+    description : Testbench only, insert an sbi_pipe stage on every master port
+    datatype    : bool
+    default     : false
+    paramtype   : generic
+
+  PIPEOUT :
+    description : Testbench only, insert an sbi_pipe stage on every target port
+    datatype    : bool
+    default     : false
+    paramtype   : generic
