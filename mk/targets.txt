@@ -6,6 +6,8 @@ lint_ghdl_synth_picosoc_icn1 : Synthesis check of sbi_icn_wrapper, PicoSoC ICN1
 lint_ghdl_synth_picosoc_rr   : Synthesis check of sbi_icn_wrapper, PicoSoC ICN2 with 2 masters roundrobin
 lint_ghdl_synth_tb           : Synthesis check of sbi_icn_wrapper, address map of tb_sbi_icn
 lint_ghdl_synth_tb_pipe      : Synthesis check of sbi_icn_wrapper, address map of tb_sbi_icn with sbi_pipe
+lint_ghdl_synth_width0       : Synthesis check of sbi_icn_wrapper, single-register targets (0-bit address width)
+lint_ghdl_width0             : Lint with GHDL of sbi_icn_wrapper, single-register targets (0-bit address width), configuration checks run
 sim_basic                    : Simulation of basic unit tests
 sim_one_hot                  : Simulation of basic unit tests with one-hot address decoding (roundrobin, or, wait states)
 sim_pipe                     : Simulation of basic unit tests with sbi_pipe on all master and target ports

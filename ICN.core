@@ -172,6 +172,22 @@ targets:
       - ADDR_MAP=one_hot
 
   #---------------------------------------
+  lint_ghdl_width0 :
+  #---------------------------------------
+    << : *lint_ghdl
+    description     : Lint with GHDL of sbi_icn_wrapper, single-register targets (0-bit address width), configuration checks run
+    parameters      :
+      - ADDR_MAP=width0
+
+  #---------------------------------------
+  lint_ghdl_synth_width0 :
+  #---------------------------------------
+    << : *lint_ghdl_synth
+    description     : Synthesis check of sbi_icn_wrapper, single-register targets (0-bit address width)
+    parameters      :
+      - ADDR_MAP=width0
+
+  #---------------------------------------
   sim_basic:
   #---------------------------------------
     << : *default
@@ -287,7 +303,7 @@ parameters :
     paramtype   : generic
 
   ADDR_MAP :
-    description : Address map of sbi_icn_wrapper (picosoc_icn2 / picosoc_icn1 / tb / one_hot)
+    description : Address map of sbi_icn_wrapper (picosoc_icn2 / picosoc_icn1 / tb / one_hot / width0)
     datatype    : str
     default     : picosoc_icn2
     paramtype   : generic
