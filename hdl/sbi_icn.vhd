@@ -276,9 +276,12 @@ begin  -- architecture rtl
       end if;
 
       -- Ensure the base address is aligned with the address width
+      -- (a target with a 0-bit address width has nothing to check: the numeric_std
+      --  comparison of the null slice with 0 returns TRUE)
       if (TARGET_ADDR_ENCODING = "binary")
       then
-        if (unsigned(TARGET_ID(tgt)(TARGET_ADDR_WIDTH(tgt)-1 downto 0)) /= 0)
+        if (TARGET_ADDR_WIDTH(tgt) > 0) and
+           (unsigned(TARGET_ID(tgt)(TARGET_ADDR_WIDTH(tgt)-1 downto 0)) /= 0)
         then
            report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Error: Target " & integer'image(tgt) & " ID must have the lower " & integer'image(TARGET_ADDR_WIDTH(tgt)) & " bits set to 0" severity failure;
         end if;
