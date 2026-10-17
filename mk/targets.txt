@@ -1,4 +1,5 @@
-default   : Default Target
-sim_basic : Simulation of basic unit tests
-sim_pipe  : Simulation of basic unit tests with sbi_pipe on all master and target ports
-
+default     : Default Target
+sim_basic   : Simulation of basic unit tests
+sim_one_hot : Simulation of basic unit tests with one-hot address decoding (roundrobin, or, wait states)
+sim_pipe    : Simulation of basic unit tests with sbi_pipe on all master and target ports
+sim_soc     : Simulation of basic unit tests with the SoC configuration (fix, or, external default slave, wait states)

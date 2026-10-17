@@ -286,12 +286,13 @@ This IP has no software-visible registers.
 
 | File | DUT | Description |
 |------|-----|-------------|
-| [sim/tb_sbi_icn.vhd](sim/tb_sbi_icn.vhd) + [sim/tb_sbi_icn_pkg.vhd](sim/tb_sbi_icn_pkg.vhd), [sim/tb_sbi_icn_suite_pkg.vhd](sim/tb_sbi_icn_suite_pkg.vhd) | `sbi_icn` (`NB_MASTER = 2`, `"roundrobin"`, `NB_TARGET = 3`, IDs `0x00` / `0x40` / `0x80`, 6-bit local addresses, `"binary"`, `"mux"`, internal default slave; generics `PIPEIN` / `PIPEOUT` (default `false`) set `PIPEIN_ENABLE = '1'` / `PIPEOUT_ENABLE = "111"`) | UVVM testbench: two masters driven by the SBI BFM (`bitvis_vip_sbi`), three zero-wait-state memory models (64 bytes each) as targets. The suite runs TC1 to TC3 and ends with `report_alert_counters(FINAL)` |
+| [sim/tb_sbi_icn.vhd](sim/tb_sbi_icn.vhd) + [sim/tb_sbi_icn_pkg.vhd](sim/tb_sbi_icn_pkg.vhd), [sim/tb_sbi_icn_suite_pkg.vhd](sim/tb_sbi_icn_suite_pkg.vhd) | `sbi_icn` (`NB_MASTER = 2`, 3 memory targets; generics `MASTER_SEL` (`"roundrobin"`), `TARGET_SEL` (`"mux"`), `TARGET_ADDR_ENCODING` (`"binary"`: IDs `0x00` / `0x40` / `0x80`, 6-bit local addresses; `"one_hot"`: IDs `0x20` / `0x40` / `0x80`, 5-bit local addresses), `INTERNAL_DEFAULT_SLAVE` (`true`; `false` adds a 4th target port, ID 0 and full address width, with a memory model as default slave), `WAIT_STATES` (`0`: target `i` answers after `WAIT_STATES*i` cycles), `PIPEIN` / `PIPEOUT` (`false`: `PIPEIN_ENABLE = '1'` / `PIPEOUT_ENABLE` all `'1'`)) | UVVM testbench: two masters driven by the SBI BFM (`bitvis_vip_sbi`) or by the concurrent driver of TC4, memory models as targets. Out of an access, a target drives `ready = 1` and `rdata = 0xFF`, and wrong data during its wait states, so the `"or"` zeroing and the `"mux"` selection are checked. A monitor checks on every cycle that at most one master receives `ready`, and only a master with `cs = 1`. The suite runs TC1 to TC4 and ends with `report_alert_counters(FINAL)` |
 | [sim/tb_sbi_icn_tc1_pkg.vhd](sim/tb_sbi_icn_tc1_pkg.vhd) | idem | TC1: write / read-check on each target, data written by one master and checked by the other |
-| [sim/tb_sbi_icn_tc2_pkg.vhd](sim/tb_sbi_icn_tc2_pkg.vhd) | idem | TC2: default slave: write to `0xC0`, read `0xC0` and `0xFF` must return `0x00` |
-| [sim/tb_sbi_icn_tc3_pkg.vhd](sim/tb_sbi_icn_tc3_pkg.vhd) | idem | TC3: exhaustive write / check of the 64 words of targets 0 and 1, then back-to-back accesses to different targets |
+| [sim/tb_sbi_icn_tc2_pkg.vhd](sim/tb_sbi_icn_tc2_pkg.vhd) | idem | TC2: default slave: write to an unmapped address (`0xC0` binary, `0x00` one-hot), read it back (`0x00` with the internal default slave, the written data with the external one) and read a second unmapped address (`0x00`) |
+| [sim/tb_sbi_icn_tc3_pkg.vhd](sim/tb_sbi_icn_tc3_pkg.vhd) | idem | TC3: exhaustive write / check of all the words of targets 0 and 1, then back-to-back accesses to different targets |
+| [sim/tb_sbi_icn_tc4_pkg.vhd](sim/tb_sbi_icn_tc4_pkg.vhd) | idem | TC4: arbitration, both masters driven in the same cycles. Simultaneous requests after a single access of M0 (first grant: M0 with `"fix"`, M1 with `"roundrobin"`) and of M1 (M0 first in both modes); then 8 back-to-back writes per master to two targets with different wait states, and 8 cross reads (each master reads the data of the other). Read data are checked; the completion order must alternate with `"roundrobin"`, start with M0 with `"fix"` (and, without input pipe, M0 must keep the bus while it requests) |
 
-The masters access the bus one after the other: concurrent requests, `"fix"` arbitration, `"or"` merge, `"one_hot"` decoding and the external default slave are not exercised. `sim_pipe` runs the same suite with an `sbi_pipe` stage on every master and target port, so the `sbi_pipe` protocol check (request stable while pending) is active on all of them.
+`sim_pipe` runs the suite with an `sbi_pipe` stage on every master and target port, so the `sbi_pipe` protocol check (request stable while pending) is active on all of them.
 
 ### Targets
 
@@ -299,7 +300,9 @@ The masters access the bus one after the other: concurrent requests, `"fix"` arb
 |--------|----------|-------------|
 | `default` | *(none)* | HDL fileset only (not a simulation) |
 | `sim_basic` | `tb_sbi_icn` | Simulation of basic unit tests (GHDL, UVVM), no pipe stage |
+| `sim_one_hot` | `tb_sbi_icn` | Same suite with `TARGET_ADDR_ENCODING=one_hot`, `TARGET_SEL=or`, `WAIT_STATES=1` |
 | `sim_pipe` | `tb_sbi_icn` | Same suite with `PIPEIN=true`, `PIPEOUT=true` (`sbi_pipe` on all master and target ports) |
+| `sim_soc` | `tb_sbi_icn` | Same suite with the configuration of the PicoSoC interconnects: `MASTER_SEL=fix`, `TARGET_SEL=or`, `INTERNAL_DEFAULT_SLAVE=false`, `WAIT_STATES=2` |
 
 ### How to Run
 
@@ -320,8 +323,8 @@ fusesoc --cores-root . run --build-root build --target sim_basic asylum:infrastr
 
 ### Simulation Features
 
-- `sim_basic` and `sim_pipe` analyze with `-Wall -fsynopsys -frelaxed --no-vital-checks` and run with `--fst=dut.fst --ieee-asserts=disable --assert-level=error` (waveform always written to `dut.fst`; any VHDL assertion of severity `error`, such as the `sbi_pipe` protocol check, stops the simulation with a failure).
-- The `.core` parameters `PIPEIN` / `PIPEOUT` (bool, default `false`) are testbench generics used by `sim_pipe`.
+- All `sim_*` targets analyze with `-Wall -fsynopsys -frelaxed --no-vital-checks` and run with `--fst=dut.fst --ieee-asserts=disable --assert-level=error` (waveform always written to `dut.fst`; any VHDL assertion of severity `error`, such as the `sbi_pipe` protocol check, stops the simulation with a failure).
+- The `.core` parameters `PIPEIN` / `PIPEOUT` (bool, default `false`), `MASTER_SEL`, `TARGET_SEL`, `TARGET_ADDR_ENCODING` (str), `INTERNAL_DEFAULT_SLAVE` (bool) and `WAIT_STATES` (int) are testbench generics used by `sim_pipe`, `sim_one_hot` and `sim_soc`.
 - `sbi_icn` reports its configuration and the address range of every target (with the target `info.name`) and stops with a failure on: one-hot ID with more than one bit set, binary ID not aligned on its address width, external default slave without `ID = 0` and full address width, overlapping target ranges.
 - `sbi_default_slave` reports every access (address) it receives.
 - `sbi_pipe` (`VERBOSE = true`) reports the transactions. Out of reset, on every enabled clock edge in `PENDING` without `ready`, it checks that the initiator keeps its request stable (`sbi_ini_i = sbi_ini_o`, assertion of severity `error`) and sets the sticky flag `transaction_error_q` on a violation.
@@ -376,11 +379,12 @@ asylum-infrastructure_icn/
 ├── sim/
 │   ├── tb_sbi_icn.vhd             # UVVM testbench top
 │   ├── tb_sbi_icn_pkg.vhd         # SBI BFM interface array type
-│   ├── tb_sbi_icn_suite_pkg.vhd   # Test suite (TC1..TC3)
+│   ├── tb_sbi_icn_suite_pkg.vhd   # Test suite (TC1..TC4)
 │   ├── tb_sbi_icn_tc1_pkg.vhd
 │   ├── tb_sbi_icn_tc2_pkg.vhd
-│   └── tb_sbi_icn_tc3_pkg.vhd
-└── .github/workflows/ci.yml       # CI (sim_basic, sim_pipe)
+│   ├── tb_sbi_icn_tc3_pkg.vhd
+│   └── tb_sbi_icn_tc4_pkg.vhd     # Arbitration
+└── .github/workflows/ci.yml       # CI (sim_basic, sim_one_hot, sim_pipe, sim_soc)
 ```
 
 ## Dependencies
@@ -388,4 +392,4 @@ asylum-infrastructure_icn/
 | Core | Used by (fileset) | Purpose |
 |------|-------------------|---------|
 | `asylum:utils:pkg` | `hdl` | Common packages (`sbi_pkg`: SBI records and operators; `logic_pkg`: `count_ones`; `convert_pkg`: `onehot_to_integer`) |
-| `bitvis:verification:uvvm` | `sim_basic` (targets `sim_basic`, `sim_pipe`) | UVVM utility library and SBI BFM (`bitvis_vip_sbi`) |
+| `bitvis:verification:uvvm` | `sim_basic` (targets `sim_basic`, `sim_one_hot`, `sim_pipe`, `sim_soc`) | UVVM utility library and SBI BFM (`bitvis_vip_sbi`) |

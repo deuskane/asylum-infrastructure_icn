@@ -60,6 +60,7 @@ filesets:
       - sim/tb_sbi_icn_tc1_pkg.vhd
       - sim/tb_sbi_icn_tc2_pkg.vhd
       - sim/tb_sbi_icn_tc3_pkg.vhd
+      - sim/tb_sbi_icn_tc4_pkg.vhd
       - sim/tb_sbi_icn_suite_pkg.vhd
       - sim/tb_sbi_icn.vhd
     file_type    : vhdlSource-2008
@@ -110,6 +111,43 @@ targets:
         analyze_options : ["-Wall","-fsynopsys","-frelaxed","--no-vital-checks"]
         run_options     : ["--fst=dut.fst","--ieee-asserts=disable","--assert-level=error"]
 
+  #---------------------------------------
+  sim_soc:
+  #---------------------------------------
+    << : *default
+    description     : Simulation of basic unit tests with the SoC configuration (fix, or, external default slave, wait states)
+    filesets_append :
+      - sim_basic
+    toplevel        : tb_sbi_icn
+    parameters      :
+      - MASTER_SEL=fix
+      - TARGET_SEL=or
+      - INTERNAL_DEFAULT_SLAVE=false
+      - WAIT_STATES=2
+    default_tool    : ghdl
+    tools :
+      ghdl :
+        analyze_options : ["-Wall","-fsynopsys","-frelaxed","--no-vital-checks"]
+        run_options     : ["--fst=dut.fst","--ieee-asserts=disable","--assert-level=error"]
+
+  #---------------------------------------
+  sim_one_hot:
+  #---------------------------------------
+    << : *default
+    description     : Simulation of basic unit tests with one-hot address decoding (roundrobin, or, wait states)
+    filesets_append :
+      - sim_basic
+    toplevel        : tb_sbi_icn
+    parameters      :
+      - TARGET_ADDR_ENCODING=one_hot
+      - TARGET_SEL=or
+      - WAIT_STATES=1
+    default_tool    : ghdl
+    tools :
+      ghdl :
+        analyze_options : ["-Wall","-fsynopsys","-frelaxed","--no-vital-checks"]
+        run_options     : ["--fst=dut.fst","--ieee-asserts=disable","--assert-level=error"]
+
 #=========================================
 parameters :
 #=========================================
@@ -124,4 +162,34 @@ parameters :
     description : Testbench only, insert an sbi_pipe stage on every target port
     datatype    : bool
     default     : false
+    paramtype   : generic
+
+  MASTER_SEL :
+    description : Testbench only, arbitration of the interconnect ("fix" / "roundrobin")
+    datatype    : str
+    default     : roundrobin
+    paramtype   : generic
+
+  TARGET_SEL :
+    description : Testbench only, response merge of the interconnect ("or" / "mux")
+    datatype    : str
+    default     : mux
+    paramtype   : generic
+
+  TARGET_ADDR_ENCODING :
+    description : Testbench only, address decoding of the interconnect ("binary" / "one_hot")
+    datatype    : str
+    default     : binary
+    paramtype   : generic
+
+  INTERNAL_DEFAULT_SLAVE :
+    description : Testbench only, false connects the default slave (memory model) to the last target port
+    datatype    : bool
+    default     : true
+    paramtype   : generic
+
+  WAIT_STATES :
+    description : Testbench only, target i answers after WAIT_STATES*i cycles
+    datatype    : int
+    default     : 0
     paramtype   : generic
