@@ -31,6 +31,8 @@ package tb_sbi_icn_tc2_pkg is
     signal clk_i          : in  std_logic;
     signal sbi_ifs        : inout t_sbi_if_array;
     constant C_NB_MASTER  : in  positive;
+    constant C_DS_ADDR    : in  sbi_addrs_t; -- 2 unmapped addresses
+    constant C_DS_IS_MEMORY : in boolean;    -- External default slave (memory model): written data is read back
     constant C_SCOPE      : in  string
   );
 end package tb_sbi_icn_tc2_pkg;
@@ -40,17 +42,24 @@ package body tb_sbi_icn_tc2_pkg is
     signal clk_i          : in  std_logic;
     signal sbi_ifs        : inout t_sbi_if_array;
     constant C_NB_MASTER  : in  positive;
+    constant C_DS_ADDR    : in  sbi_addrs_t; -- 2 unmapped addresses
+    constant C_DS_IS_MEMORY : in boolean;    -- External default slave (memory model): written data is read back
     constant C_SCOPE      : in  string
   ) is
+    variable v_exp : std_logic_vector(SBI_DATA_WIDTH-1 downto 0) := x"00"; -- Internal default slave: read data 0
   begin
     log(ID_LOG_HDR, "Test Case 2: Access to default slave", C_SCOPE);
 
-    sbi_write(addr_value => x"C0", data_value => x"EE", msg => "M0 Write to default slave", clk => clk_i, sbi_if => sbi_ifs(0));
-    if C_NB_MASTER > 1 then
-      sbi_check(addr_value => x"C0", data_exp   => x"00", msg => "M1 Check default slave",    clk => clk_i, sbi_if => sbi_ifs(1));
-    else
-      sbi_check(addr_value => x"C0", data_exp   => x"00", msg => "M0 Check default slave",    clk => clk_i, sbi_if => sbi_ifs(0));
+    if C_DS_IS_MEMORY then
+      v_exp := x"EE";
     end if;
-    sbi_check(addr_value => x"FF", data_exp   => x"00", msg => "M0 Check unmapped top addr",clk => clk_i, sbi_if => sbi_ifs(0));
+
+    sbi_write(addr_value => unsigned(C_DS_ADDR(0)), data_value => x"EE", msg => "M0 Write to default slave", clk => clk_i, sbi_if => sbi_ifs(0));
+    if C_NB_MASTER > 1 then
+      sbi_check(addr_value => unsigned(C_DS_ADDR(0)), data_exp   => v_exp, msg => "M1 Check default slave",    clk => clk_i, sbi_if => sbi_ifs(1));
+    else
+      sbi_check(addr_value => unsigned(C_DS_ADDR(0)), data_exp   => v_exp, msg => "M0 Check default slave",    clk => clk_i, sbi_if => sbi_ifs(0));
+    end if;
+    sbi_check(addr_value => unsigned(C_DS_ADDR(1)), data_exp   => x"00", msg => "M0 Check unmapped top addr",clk => clk_i, sbi_if => sbi_ifs(0));
   end procedure run_test_case;
 end package body tb_sbi_icn_tc2_pkg;

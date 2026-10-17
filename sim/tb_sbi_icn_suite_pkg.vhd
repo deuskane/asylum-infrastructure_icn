@@ -35,6 +35,10 @@ package tb_sbi_icn_suite_pkg is
     constant C_NB_TARGET  : in  positive;
     constant C_TARGET_ID  : in  sbi_addrs_t;
     constant C_TARGET_MEM_SIZE : in  naturals_t;
+    constant C_DS_ADDR    : in  sbi_addrs_t;
+    constant C_DS_IS_MEMORY : in boolean;
+    constant C_MASTER_SEL : in  string;
+    constant C_PIPEIN     : in  boolean;
     constant C_CLK_PERIOD : in  time;
     constant C_SCOPE      : in  string
   );
@@ -53,6 +57,10 @@ package body tb_sbi_icn_suite_pkg is
     constant C_NB_TARGET  : in  positive;
     constant C_TARGET_ID  : in  sbi_addrs_t;
     constant C_TARGET_MEM_SIZE : in  naturals_t;
+    constant C_DS_ADDR    : in  sbi_addrs_t;
+    constant C_DS_IS_MEMORY : in boolean;
+    constant C_MASTER_SEL : in  string;
+    constant C_PIPEIN     : in  boolean;
     constant C_CLK_PERIOD : in  time;
     constant C_SCOPE      : in  string
   ) is
@@ -89,6 +97,8 @@ package body tb_sbi_icn_suite_pkg is
       clk_i         => clk_i,
       sbi_ifs       => sbi_ifs,
       C_NB_MASTER   => C_NB_MASTER,
+      C_DS_ADDR     => C_DS_ADDR,
+      C_DS_IS_MEMORY => C_DS_IS_MEMORY,
       C_SCOPE       => C_SCOPE
     );
 
@@ -99,6 +109,16 @@ package body tb_sbi_icn_suite_pkg is
       C_NB_TARGET   => C_NB_TARGET,
       C_TARGET_ID   => C_TARGET_ID,
       C_TARGET_MEM_SIZE => C_TARGET_MEM_SIZE,
+      C_SCOPE       => C_SCOPE
+    );
+
+    work.tb_sbi_icn_tc4_pkg.run_test_case(
+      clk_i         => clk_i,
+      sbi_ifs       => sbi_ifs,
+      C_NB_MASTER   => C_NB_MASTER,
+      C_TARGET_ID   => C_TARGET_ID,
+      C_MASTER_SEL  => C_MASTER_SEL,
+      C_PIPEIN      => C_PIPEIN,
       C_SCOPE       => C_SCOPE
     );
 
