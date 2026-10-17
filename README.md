@@ -323,6 +323,7 @@ fusesoc --cores-root . run --build-root build --target sim_basic asylum:infrastr
 - `sim_basic` and `sim_pipe` analyze with `-Wall -fsynopsys -frelaxed --no-vital-checks` and run with `--fst=dut.fst --ieee-asserts=disable --assert-level=error` (waveform always written to `dut.fst`; any VHDL assertion of severity `error`, such as the `sbi_pipe` protocol check, stops the simulation with a failure).
 - The `.core` parameters `PIPEIN` / `PIPEOUT` (bool, default `false`) are testbench generics used by `sim_pipe`.
 - `sbi_icn` reports its configuration and the address range of every target (with the target `info.name`) and stops with a failure on: one-hot ID with more than one bit set, binary ID not aligned on its address width, external default slave without `ID = 0` and full address width, overlapping target ranges.
+- `sbi_icn_mux_mst` warns when the granted master releases `cs` before `ready`.
 - `sbi_default_slave` reports every access (address) it receives.
 - `sbi_pipe` (`VERBOSE = true`) reports the transactions. Out of reset, on every enabled clock edge in `PENDING` without `ready`, it checks that the initiator keeps its request stable (`sbi_ini_i = sbi_ini_o`, assertion of severity `error`) and sets the sticky flag `transaction_error_q` on a violation.
 
@@ -345,7 +346,7 @@ No dedicated synthesis target. The HDL of the `default` target (VHDL-2008, `vhdl
 
 ### Arbitration and Latency
 
-- The arbiter grants a master on a clock edge where it is idle (`busy = 0`) and that master has `cs = 1`; the request reaches the targets only once `busy = 1`, and `busy` is released on the edge where the granted transfer returns `ready = 1`. With zero-wait-state targets an access therefore takes two cycles, also with `NB_MASTER = 1`.
+- The arbiter grants a master on a clock edge where it is idle (`busy = 0`) and that master has `cs = 1`; the request reaches the targets only once `busy = 1`, and `busy` is released on the edge where the granted transfer returns `ready = 1`, or where the granted master has dropped `cs` before `ready` (aborted transfer: protocol violation, reported by a simulation warning, the other masters are not blocked). With zero-wait-state targets an access therefore takes two cycles, also with `NB_MASTER = 1`.
 - `"roundrobin"` starts the search at the master following the last granted one; `"fix"` always starts at master 0.
 - An enabled `sbi_pipe` runs `IDLE -> PENDING -> RESPONSE -> IDLE`: the request is registered in `IDLE`, held with `cs = 1` in `PENDING` until the target answers, and the registered response (`ready = 1`) is presented to the initiator during `RESPONSE`.
 
