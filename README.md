@@ -322,7 +322,7 @@ fusesoc --cores-root . run --build-root build --target sim_basic asylum:infrastr
 
 - `sim_basic` and `sim_pipe` analyze with `-Wall -fsynopsys -frelaxed --no-vital-checks` and run with `--fst=dut.fst --ieee-asserts=disable --assert-level=error` (waveform always written to `dut.fst`; any VHDL assertion of severity `error`, such as the `sbi_pipe` protocol check, stops the simulation with a failure).
 - The `.core` parameters `PIPEIN` / `PIPEOUT` (bool, default `false`) are testbench generics used by `sim_pipe`.
-- `sbi_icn` reports its configuration and the address range of every target (with the target `info.name`) and stops with a failure on: one-hot ID with more than one bit set, binary ID not aligned on its address width, external default slave without `ID = 0` and full address width, overlapping target ranges.
+- `sbi_icn` reports its configuration and the address range of every target (with the target `info.name`) and stops with a failure on: one-hot ID with more than one bit set, one-hot select bit of a target inside the local address range of a target (itself included), binary ID not aligned on its address width, external default slave without `ID = 0` and full address width, overlapping target ranges.
 - `sbi_default_slave` reports every access (address) it receives.
 - `sbi_pipe` (`VERBOSE = true`) reports the transactions. Out of reset, on every enabled clock edge in `PENDING` without `ready`, it checks that the initiator keeps its request stable (`sbi_ini_i = sbi_ini_o`, assertion of severity `error`) and sets the sticky flag `transaction_error_q` on a violation.
 
@@ -341,6 +341,7 @@ No dedicated synthesis target. The HDL of the `default` target (VHDL-2008, `vhdl
 
 - `binary`: target `t` is selected when the address bits above `TARGET_ADDR_WIDTH(t)` equal those of `TARGET_ID(t)`; its range is `TARGET_ID(t) .. TARGET_ID(t) + 2**TARGET_ADDR_WIDTH(t) - 1`.
 - `one_hot`: target `t` is selected when the address bit at the index of the bit set in `TARGET_ID(t)` is 1.
+  The local address bits must stay below every select bit (`TARGET_ADDR_WIDTH(t) <= index of the bit set in TARGET_ID(u)` for all `t`, `u`), else an access to `t` also selects `u` (simulation check).
 - The target receives `addr(TARGET_ADDR_WIDTH(t)-1 downto 0)` zero-extended to the bus width; `re`, `we` and `wdata` are broadcast to all targets, only `cs` is decoded.
 
 ### Arbitration and Latency

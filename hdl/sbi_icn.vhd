@@ -273,6 +273,21 @@ begin  -- architecture rtl
         then
            report "["&NAME&"]["& sbi_tgts_i(tgt).info.name &"] Error: Target " & integer'image(tgt) & " ID must be one-hot encoded" severity failure;
         end if;
+
+        -- Ensure the local address bits of the target don't include the select bit
+        -- of any target (itself included): else an access to this target also selects
+        -- the other one, or a part of its own address space is unreachable
+        for tgt2 in 0 to NB_TARGET_INT-1
+        loop
+          if (count_ones(TARGET_ID(tgt2)) = 1) and
+             (TARGET_ADDR_WIDTH(tgt) > onehot_to_integer(TARGET_ID(tgt2)))
+          then
+             report "["&NAME&"] Error: One-hot overlap: Target " & integer'image(tgt) & " (" & sbi_tgts_i(tgt).info.name & ") local address width " & integer'image(TARGET_ADDR_WIDTH(tgt)) &
+                    " includes the select bit " & integer'image(onehot_to_integer(TARGET_ID(tgt2))) &
+                    " of Target " & integer'image(tgt2) & " (" & sbi_tgts_i(tgt2).info.name & ")"
+                    severity failure;
+          end if;
+        end loop;
       end if;
 
       -- Ensure the base address is aligned with the address width
