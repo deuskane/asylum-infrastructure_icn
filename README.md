@@ -300,6 +300,8 @@ The masters access the bus one after the other: concurrent requests, `"fix"` arb
 | `default` | *(none)* | HDL fileset only (not a simulation) |
 | `sim_basic` | `tb_sbi_icn` | Simulation of basic unit tests (GHDL, UVVM), no pipe stage |
 | `sim_pipe` | `tb_sbi_icn` | Same suite with `PIPEIN=true`, `PIPEOUT=true` (`sbi_pipe` on all master and target ports) |
+| `lint_ghdl` | `sbi_icn_synth_top` | Lint: GHDL `-Wall` analysis and elaboration (empty simulation) of `sbi_icn` (and so of every entity of `hdl/`) in a wrapper with flat SBI ports and an address map selected by `ADDR_MAP` (`syn/ghdl/sbi_icn_synth_top.vhd`, default: ICN2 of PicoSoC) |
+| `lint_ghdl_synth` | `sbi_icn_synth_top` | Synthesis check: `lint_ghdl`, then `ghdl --synth -Wall` of 6 configurations (`syn/ghdl/ghdl_synth.sh`: PicoSoC ICN2 (1 master, `fix`, `or`, 10 targets `binary`, internal default slave), PicoSoC ICN1 (3 targets, external default slave), PicoSoC ICN2 with 2 masters `roundrobin`, map of `tb_sbi_icn` (2 masters `roundrobin`, `mux`, 3 targets), the same with `sbi_pipe` on every master and target port, 3 masters `fix` with 4 targets `one_hot`), fails on a synthesis error or an inferred latch |
 
 ### How to Run
 
@@ -309,6 +311,8 @@ The default tool is GHDL (`mk/defs.mk`: `TOOL ?= ghdl`, `TARGET ?= sim_basic`).
 make help                 # variables, rules and target list (mk/targets.txt)
 make sim_basic            # run one target (log in log/)
 make nonreg_sim           # run every sim_* target
+make lint_ghdl            # GHDL -Wall lint (make nonreg_lint: every lint_* target)
+make lint_ghdl_synth      # GHDL -Wall lint + ghdl --synth -Wall check
 make clean                # remove build/
 ```
 
@@ -328,7 +332,7 @@ fusesoc --cores-root . run --build-root build --target sim_basic asylum:infrastr
 
 ## Synthesis
 
-No dedicated synthesis target. The HDL of the `default` target (VHDL-2008, `vhdlSource-2008`) is synthesizable: all simulation-only code (`report`, `wait`, protocol assertion) is enclosed in `pragma translate_off / translate_on` in `sbi_icn`, `sbi_pipe` and `sbi_default_slave`. Resource-relevant generics:
+No vendor synthesis target (`lint_ghdl_synth` checks the RTL with `ghdl --synth`, see [Targets](#targets)). The HDL of the `default` target (VHDL-2008, `vhdlSource-2008`) is synthesizable: all simulation-only code (`report`, `wait`, protocol assertion) is enclosed in `pragma translate_off / translate_on` in `sbi_icn`, `sbi_pipe` and `sbi_default_slave`. Resource-relevant generics:
 
 - `NB_MASTER` / `NB_TARGET`: width of the request and response multiplexers and number of decoders.
 - `TARGET_SEL`: `"or"` adds zeroing gates per target and an OR tree; `"mux"` a priority multiplexer.
@@ -380,6 +384,9 @@ asylum-infrastructure_icn/
 │   ├── tb_sbi_icn_tc1_pkg.vhd
 │   ├── tb_sbi_icn_tc2_pkg.vhd
 │   └── tb_sbi_icn_tc3_pkg.vhd
+├── syn/ghdl/
+│   ├── sbi_icn_synth_top.vhd      # Lint / synthesis check top (sbi_icn, flat SBI ports, address maps)
+│   └── ghdl_synth.sh              # ghdl --synth check (post_run hook of lint_ghdl_synth)
 └── .github/workflows/ci.yml       # CI (sim_basic, sim_pipe)
 ```
 

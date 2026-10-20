@@ -1,4 +1,6 @@
-default   : Default Target
-sim_basic : Simulation of basic unit tests
-sim_pipe  : Simulation of basic unit tests with sbi_pipe on all master and target ports
+default         : Default Target
+lint_ghdl       : Lint with GHDL (-Wall analysis and elaboration of sbi_icn_synth_top)
+lint_ghdl_synth : Synthesis check, ghdl --synth -Wall of sbi_icn_synth_top (6 configurations)
+sim_basic       : Simulation of basic unit tests
+sim_pipe        : Simulation of basic unit tests with sbi_pipe on all master and target ports
 

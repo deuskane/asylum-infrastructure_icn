@@ -68,6 +68,15 @@ filesets:
       - bitvis:verification:uvvm
 
 
+  #---------------------------------------
+  # Lint Files (post_run hook of lint_ghdl_synth)
+  #---------------------------------------
+  files_lint:
+    files:
+      - syn/ghdl/sbi_icn_synth_top.vhd
+      - syn/ghdl/ghdl_synth.sh : {file_type : user, copyto : ghdl_synth.sh}
+    file_type : vhdlSource-2008
+
 #=========================================
 targets:
 #=========================================
@@ -78,6 +87,35 @@ targets:
     description     : Default Target
     filesets        :
       - hdl
+
+  #---------------------------------------
+  # Lint : -Wall analysis and elaboration (empty simulation)
+  #---------------------------------------
+  lint_ghdl :
+    << : *default
+    description     : Lint with GHDL (-Wall analysis and elaboration of sbi_icn_synth_top)
+    toplevel        : sbi_icn_synth_top
+    filesets_append : [files_lint]
+    default_tool    : ghdl
+    tools :
+      ghdl :
+        analyze_options : ["-Wall"]
+
+  #---------------------------------------
+  # Synthesis check : lint_ghdl, then ghdl --synth -Wall of sbi_icn_synth_top
+  # for each configuration of syn/ghdl/ghdl_synth.sh (post_run hook)
+  #---------------------------------------
+  lint_ghdl_synth :
+    << : *default
+    description     : Synthesis check, ghdl --synth -Wall of sbi_icn_synth_top (6 configurations)
+    toplevel        : sbi_icn_synth_top
+    filesets_append : [files_lint]
+    default_tool    : ghdl
+    tools :
+      ghdl :
+        analyze_options : ["-Wall"]
+    hooks :
+      post_run : [ghdl_synth]
 
   #---------------------------------------
   sim_basic:
@@ -109,6 +147,16 @@ targets:
       ghdl :
         analyze_options : ["-Wall","-fsynopsys","-frelaxed","--no-vital-checks"]
         run_options     : ["--fst=dut.fst","--ieee-asserts=disable","--assert-level=error"]
+
+#=========================================
+scripts:
+#=========================================
+
+  #---------------------------------------
+  # Hook of lint_ghdl_synth (cwd = work_root)
+  #---------------------------------------
+  ghdl_synth :
+    cmd : [bash, ghdl_synth.sh]
 
 #=========================================
 parameters :
