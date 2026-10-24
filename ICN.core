@@ -69,13 +69,14 @@ filesets:
 
 
   #---------------------------------------
-  # Lint Files (post_run hook of lint_ghdl_synth)
+  syn:
   #---------------------------------------
-  files_lint:
-    files:
-      - syn/ghdl/sbi_icn_synth_top.vhd
-      - syn/ghdl/ghdl_synth.sh : {file_type : user, copyto : ghdl_synth.sh}
-    file_type : vhdlSource-2008
+    files        :
+      - syn/sbi_icn_wrapper.vhd
+    file_type    : vhdlSource-2008
+    logical_name : asylum
+    depend       :
+      - ">=asylum:utils:generators:2.8.0"
 
 #=========================================
 targets:
@@ -91,31 +92,82 @@ targets:
   #---------------------------------------
   # Lint : -Wall analysis and elaboration (empty simulation)
   #---------------------------------------
-  lint_ghdl :
+  lint_ghdl : &lint_ghdl
     << : *default
-    description     : Lint with GHDL (-Wall analysis and elaboration of sbi_icn_synth_top)
-    toplevel        : sbi_icn_synth_top
-    filesets_append : [files_lint]
+    description     : Lint with GHDL (-Wall analysis and elaboration of sbi_icn_wrapper)
+    toplevel        : asylum.sbi_icn_wrapper
+    filesets_append : [syn]
     default_tool    : ghdl
     tools :
       ghdl :
         analyze_options : ["-Wall"]
 
   #---------------------------------------
-  # Synthesis check : lint_ghdl, then ghdl --synth -Wall of sbi_icn_synth_top
-  # for each configuration of syn/ghdl/ghdl_synth.sh (post_run hook)
+  # Synthesis check : -Wall analysis, ghdl --synth -Wall and elaboration
+  # (no simulation) of sbi_icn_wrapper with the generics of the target.
+  # The pre_run hook (ghdl_synth.sh of asylum:utils:generators) adds
+  # ghdl_synth.mk to the edalize Makefile.
+  # FuseSoC merges tools in depth : analyze_options comes from lint_ghdl.
   #---------------------------------------
-  lint_ghdl_synth :
-    << : *default
-    description     : Synthesis check, ghdl --synth -Wall of sbi_icn_synth_top (6 configurations)
-    toplevel        : sbi_icn_synth_top
-    filesets_append : [files_lint]
-    default_tool    : ghdl
+  lint_ghdl_synth_default : &lint_ghdl_synth
+    << : *lint_ghdl
+    description     : Synthesis check of sbi_icn_wrapper, PicoSoC ICN2 (default generics)
     tools :
       ghdl :
-        analyze_options : ["-Wall"]
+        run_options     : ["--no-run"]
     hooks :
-      post_run : [ghdl_synth]
+      pre_run : [ghdl_synth]
+
+  #---------------------------------------
+  lint_ghdl_synth_picosoc_icn1 :
+  #---------------------------------------
+    << : *lint_ghdl_synth
+    description     : Synthesis check of sbi_icn_wrapper, PicoSoC ICN1
+    parameters      :
+      - ADDR_MAP=picosoc_icn1
+      - INTERNAL_DEFAULT_SLAVE=false
+
+  #---------------------------------------
+  lint_ghdl_synth_picosoc_rr :
+  #---------------------------------------
+    << : *lint_ghdl_synth
+    description     : Synthesis check of sbi_icn_wrapper, PicoSoC ICN2 with 2 masters roundrobin
+    parameters      :
+      - NB_MASTER=2
+      - MASTER_SEL=roundrobin
+
+  #---------------------------------------
+  lint_ghdl_synth_tb :
+  #---------------------------------------
+    << : *lint_ghdl_synth
+    description     : Synthesis check of sbi_icn_wrapper, address map of tb_sbi_icn
+    parameters      :
+      - NB_MASTER=2
+      - MASTER_SEL=roundrobin
+      - TARGET_SEL=mux
+      - ADDR_MAP=tb
+
+  #---------------------------------------
+  lint_ghdl_synth_tb_pipe :
+  #---------------------------------------
+    << : *lint_ghdl_synth
+    description     : Synthesis check of sbi_icn_wrapper, address map of tb_sbi_icn with sbi_pipe
+    parameters      :
+      - NB_MASTER=2
+      - MASTER_SEL=roundrobin
+      - TARGET_SEL=mux
+      - ADDR_MAP=tb
+      - PIPEIN=true
+      - PIPEOUT=true
+
+  #---------------------------------------
+  lint_ghdl_synth_one_hot :
+  #---------------------------------------
+    << : *lint_ghdl_synth
+    description     : Synthesis check of sbi_icn_wrapper, 3 masters, 4 targets one_hot
+    parameters      :
+      - NB_MASTER=3
+      - ADDR_MAP=one_hot
 
   #---------------------------------------
   sim_basic:
@@ -153,7 +205,7 @@ scripts:
 #=========================================
 
   #---------------------------------------
-  # Hook of lint_ghdl_synth (cwd = work_root)
+  # pre_run hook of lint_ghdl_synth_* (cwd = work_root)
   #---------------------------------------
   ghdl_synth :
     cmd : [bash, ghdl_synth.sh]
@@ -172,4 +224,37 @@ parameters :
     description : Testbench only, insert an sbi_pipe stage on every target port
     datatype    : bool
     default     : false
+    paramtype   : generic
+
+  #---------------------------------------
+  # Generics of sbi_icn_wrapper (lint_ghdl_synth_*)
+  #---------------------------------------
+  NB_MASTER :
+    description : Number of masters
+    datatype    : int
+    default     : 1
+    paramtype   : generic
+
+  MASTER_SEL :
+    description : Master arbitration (fix / roundrobin)
+    datatype    : str
+    default     : fix
+    paramtype   : generic
+
+  TARGET_SEL :
+    description : Target read data selection (or / mux)
+    datatype    : str
+    default     : or
+    paramtype   : generic
+
+  ADDR_MAP :
+    description : Address map of sbi_icn_wrapper (picosoc_icn2 / picosoc_icn1 / tb / one_hot)
+    datatype    : str
+    default     : picosoc_icn2
+    paramtype   : generic
+
+  INTERNAL_DEFAULT_SLAVE :
+    description : true, internal default slave
+    datatype    : bool
+    default     : true
     paramtype   : generic

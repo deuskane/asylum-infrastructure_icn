@@ -1,6 +1,11 @@
-default         : Default Target
-lint_ghdl       : Lint with GHDL (-Wall analysis and elaboration of sbi_icn_synth_top)
-lint_ghdl_synth : Synthesis check, ghdl --synth -Wall of sbi_icn_synth_top (6 configurations)
-sim_basic       : Simulation of basic unit tests
-sim_pipe        : Simulation of basic unit tests with sbi_pipe on all master and target ports
+default                      : Default Target
+lint_ghdl                    : Lint with GHDL (-Wall analysis and elaboration of sbi_icn_wrapper)
+lint_ghdl_synth_default      : Synthesis check of sbi_icn_wrapper, PicoSoC ICN2 (default generics)
+lint_ghdl_synth_one_hot      : Synthesis check of sbi_icn_wrapper, 3 masters, 4 targets one_hot
+lint_ghdl_synth_picosoc_icn1 : Synthesis check of sbi_icn_wrapper, PicoSoC ICN1
+lint_ghdl_synth_picosoc_rr   : Synthesis check of sbi_icn_wrapper, PicoSoC ICN2 with 2 masters roundrobin
+lint_ghdl_synth_tb           : Synthesis check of sbi_icn_wrapper, address map of tb_sbi_icn
+lint_ghdl_synth_tb_pipe      : Synthesis check of sbi_icn_wrapper, address map of tb_sbi_icn with sbi_pipe
+sim_basic                    : Simulation of basic unit tests
+sim_pipe                     : Simulation of basic unit tests with sbi_pipe on all master and target ports
 

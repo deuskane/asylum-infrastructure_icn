@@ -1,17 +1,17 @@
 -------------------------------------------------------------------------------
--- Title      : sbi_icn_synth_top
+-- Title      : sbi_icn_wrapper
 -- Project    : Asylum
 -------------------------------------------------------------------------------
--- File       : sbi_icn_synth_top.vhd
+-- File       : sbi_icn_wrapper.vhd
 -- Author     : Mathieu Rosiere
 -------------------------------------------------------------------------------
 -- Description:
--- Synthesis check top (lint_ghdl, lint_ghdl_synth) : sbi_icn (and so
+-- Wrapper (lint_ghdl, lint_ghdl_synth_*) : sbi_icn (and so
 -- sbi_pipe, sbi_icn_mux_mst, sbi_icn_mux_tgt, sbi_wrapper_target and
 -- sbi_default_slave) with flat and constrained ports (sbi_icn has
 -- unconstrained SBI record ports, and TARGET_ID / TARGET_ADDR_WIDTH are
 -- arrays without default that cannot be set on the command line).
--- The address map is selected by ADDR_MAP (sbi_icn_synth_pkg) :
+-- The address map is selected by ADDR_MAP (sbi_icn_wrapper_pkg) :
 --   "picosoc_icn2" : ICN2 of asylum-soc-picosoc, 10 targets, binary (default)
 --   "picosoc_icn1" : ICN1 of asylum-soc-picosoc, 3 targets, binary, the last
 --                    one is the external default slave (ID 0, 8 bits)
@@ -27,6 +27,7 @@
 -- Revisions  :
 -- Date        Version  Author   Description
 -- 2026-10-20  1.0      mrosiere Created
+-- 2026-10-24  1.1      mrosiere Was sbi_icn_synth_top, library asylum
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -34,7 +35,7 @@ use     ieee.std_logic_1164.all;
 library asylum;
 use     asylum.sbi_pkg.all;
 
-package sbi_icn_synth_pkg is
+package sbi_icn_wrapper_pkg is
 
   -- ICN2 of asylum-soc-picosoc (PicoSoC_pkg / PicoSoC_user) : switch, led0,
   -- led1, uart, spi, timer, crc, spinlock, mailbox, ram2
@@ -61,9 +62,9 @@ package sbi_icn_synth_pkg is
   function map_nb_target  (m : string) return positive;
   function to_sl          (b : boolean) return std_logic;
 
-end package sbi_icn_synth_pkg;
+end package sbi_icn_wrapper_pkg;
 
-package body sbi_icn_synth_pkg is
+package body sbi_icn_wrapper_pkg is
 
   function map_id (m : string) return sbi_addrs_t is
   begin
@@ -103,16 +104,16 @@ package body sbi_icn_synth_pkg is
     end if;
   end function to_sl;
 
-end package body sbi_icn_synth_pkg;
+end package body sbi_icn_wrapper_pkg;
 
 library ieee;
 use     ieee.std_logic_1164.all;
 library asylum;
 use     asylum.sbi_pkg.all;
 library work;
-use     work.sbi_icn_synth_pkg.all;
+use     work.sbi_icn_wrapper_pkg.all;
 
-entity sbi_icn_synth_top is
+entity sbi_icn_wrapper is
   generic (
     NB_MASTER              : positive := 1;
     MASTER_SEL             : string   := "fix";
@@ -145,9 +146,9 @@ entity sbi_icn_synth_top is
     tgt_ready_i   : in  std_logic_vector(map_nb_target(ADDR_MAP)               -1 downto 0);
     tgt_rdata_i   : in  std_logic_vector(map_nb_target(ADDR_MAP)*SBI_DATA_WIDTH-1 downto 0)
   );
-end entity sbi_icn_synth_top;
+end entity sbi_icn_wrapper;
 
-architecture rtl of sbi_icn_synth_top is
+architecture rtl of sbi_icn_wrapper is
 
   constant NB_TARGET   : positive := map_nb_target(ADDR_MAP);
   constant AW          : natural  := SBI_ADDR_WIDTH;
