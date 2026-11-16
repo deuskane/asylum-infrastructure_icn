@@ -17,6 +17,8 @@
 --                    one is the external default slave (ID 0, 8 bits)
 --   "tb"           : map of tb_sbi_icn, 3 targets of 6 bits, binary
 --   "one_hot"      : 4 targets (address bits 4 to 7) of 4 bits, one_hot
+--   "width0"       : 3 targets, binary, two single-register targets with a
+--                    0-bit address width (0x00, 0x01) and one of 7 bits
 -- The other generics are forwarded, PIPEIN / PIPEOUT set PIPEIN_ENABLE and
 -- every bit of PIPEOUT_ENABLE. SBI address / data width : SBI_ADDR_WIDTH /
 -- SBI_DATA_WIDTH, port m (target t) on the bits m*WIDTH+WIDTH-1 downto
@@ -28,6 +30,7 @@
 -- Date        Version  Author   Description
 -- 2026-10-20  1.0      mrosiere Created
 -- 2026-10-24  1.1      mrosiere Was sbi_icn_synth_top, library asylum
+-- 2026-11-17  1.2      mrosiere Address map width0 (targets with a 0-bit address)
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -56,6 +59,10 @@ package sbi_icn_wrapper_pkg is
   constant ONE_HOT_ID      : sbi_addrs_t(0 to 3) := (x"10", x"20", x"40", x"80");
   constant ONE_HOT_AW      : naturals_t (0 to 3) := (4, 4, 4, 4);
 
+  -- Single-register targets (0-bit address width)
+  constant WIDTH0_ID       : sbi_addrs_t(0 to 2) := (x"00", x"01", x"80");
+  constant WIDTH0_AW       : naturals_t (0 to 2) := (0, 0, 7);
+
   function map_id         (m : string) return sbi_addrs_t;
   function map_addr_width (m : string) return naturals_t;
   function map_encoding   (m : string) return string;
@@ -71,6 +78,7 @@ package body sbi_icn_wrapper_pkg is
     if    m = "picosoc_icn1" then return PICOSOC_ICN1_ID;
     elsif m = "tb"           then return TB_ID;
     elsif m = "one_hot"      then return ONE_HOT_ID;
+    elsif m = "width0"       then return WIDTH0_ID;
     else                          return PICOSOC_ICN2_ID;
     end if;
   end function map_id;
@@ -80,6 +88,7 @@ package body sbi_icn_wrapper_pkg is
     if    m = "picosoc_icn1" then return PICOSOC_ICN1_AW;
     elsif m = "tb"           then return TB_AW;
     elsif m = "one_hot"      then return ONE_HOT_AW;
+    elsif m = "width0"       then return WIDTH0_AW;
     else                          return PICOSOC_ICN2_AW;
     end if;
   end function map_addr_width;
