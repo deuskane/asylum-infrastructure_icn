@@ -40,7 +40,7 @@
 
 **SBI interconnect: N masters to M targets with fixed-priority or round-robin arbitration, binary or one-hot address decoding, default slave and optional pipeline stages.**
 
-VLNV: `asylum:infrastructure:icn:1.3.4`
+VLNV: `asylum:infrastructure:icn:1.4.0`
 
 ## Table of Contents
 
@@ -337,7 +337,7 @@ make clean                # remove build/
 Equivalent FuseSoC command:
 
 ```bash
-fusesoc --cores-root . run --build-root build --target sim_basic asylum:infrastructure:icn:1.3.4
+fusesoc --cores-root . run --build-root build --target sim_basic asylum:infrastructure:icn:1.4.0
 ```
 
 ### Simulation Features
