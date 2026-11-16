@@ -40,7 +40,7 @@
 
 **SBI interconnect: N masters to M targets with fixed-priority or round-robin arbitration, binary or one-hot address decoding, default slave and optional pipeline stages.**
 
-VLNV: `asylum:infrastructure:icn:1.3.4`
+VLNV: `asylum:infrastructure:icn:1.4.0`
 
 ## Table of Contents
 
@@ -291,6 +291,7 @@ This IP has no software-visible registers.
 | [sim/tb_sbi_icn_tc2_pkg.vhd](sim/tb_sbi_icn_tc2_pkg.vhd) | idem | TC2: default slave: write to an unmapped address (`0xC0` binary, `0x00` one-hot), read it back (`0x00` with the internal default slave, the written data with the external one) and read a second unmapped address (`0x00`) |
 | [sim/tb_sbi_icn_tc3_pkg.vhd](sim/tb_sbi_icn_tc3_pkg.vhd) | idem | TC3: exhaustive write / check of all the words of targets 0 and 1, then back-to-back accesses to different targets |
 | [sim/tb_sbi_icn_tc4_pkg.vhd](sim/tb_sbi_icn_tc4_pkg.vhd) | idem | TC4: arbitration, both masters driven in the same cycles. Simultaneous requests after a single access of M0 (first grant: M0 with `"fix"`, M1 with `"roundrobin"`) and of M1 (M0 first in both modes); then 8 back-to-back writes per master to two targets with different wait states, and 8 cross reads (each master reads the data of the other). Read data are checked; the completion order must alternate with `"roundrobin"`, start with M0 with `"fix"` (and, without input pipe, M0 must keep the bus while it requests) |
+| [sim/tb_sbi_icn_tc5_pkg.vhd](sim/tb_sbi_icn_tc5_pkg.vhd) | idem | TC5: aborted transfer. M0 starts a read of the slowest target (at least 2 wait states) and releases `cs` one cycle after the grant, before `ready`; M1 must then complete a write within 50 cycles (read back by M0). Needs 2 masters, such a target and no input pipe: run by `sim_soc` and `sim_one_hot`, skipped by `sim_basic` and `sim_pipe` |
 
 `sim_pipe` runs the suite with an `sbi_pipe` stage on every master and target port, so the `sbi_pipe` protocol check (request stable while pending) is active on all of them.
 
@@ -336,7 +337,7 @@ make clean                # remove build/
 Equivalent FuseSoC command:
 
 ```bash
-fusesoc --cores-root . run --build-root build --target sim_basic asylum:infrastructure:icn:1.3.4
+fusesoc --cores-root . run --build-root build --target sim_basic asylum:infrastructure:icn:1.4.0
 ```
 
 ### Simulation Features
@@ -344,6 +345,7 @@ fusesoc --cores-root . run --build-root build --target sim_basic asylum:infrastr
 - All `sim_*` targets analyze with `-Wall -fsynopsys -frelaxed --no-vital-checks` and run with `--fst=dut.fst --ieee-asserts=disable --assert-level=error` (waveform always written to `dut.fst`; any VHDL assertion of severity `error`, such as the `sbi_pipe` protocol check, stops the simulation with a failure).
 - The `.core` parameters `PIPEIN` / `PIPEOUT` (bool, default `false`), `MASTER_SEL`, `TARGET_SEL`, `TARGET_ADDR_ENCODING` (str), `INTERNAL_DEFAULT_SLAVE` (bool) and `WAIT_STATES` (int) are testbench generics used by `sim_pipe`, `sim_one_hot` and `sim_soc`.
 - `sbi_icn` reports its configuration and the address range of every target (with the target `info.name`) and stops with a failure on: one-hot ID with more than one bit set, one-hot select bit of a target inside the local address range of a target (itself included), binary ID not aligned on its address width, external default slave without `ID = 0` and full address width, overlapping target ranges.
+- `sbi_icn_mux_mst` warns when the granted master releases `cs` before `ready`.
 - `sbi_default_slave` reports every access (address) it receives.
 - `sbi_pipe` (`VERBOSE = true`) reports the transactions. Out of reset, on every enabled clock edge in `PENDING` without `ready`, it checks that the initiator keeps its request stable (`sbi_ini_i = sbi_ini_o`, assertion of severity `error`) and sets the sticky flag `transaction_error_q` on a violation.
 
@@ -367,7 +369,7 @@ No vendor synthesis target (the `lint_ghdl_synth_*` targets check the RTL with `
 
 ### Arbitration and Latency
 
-- The arbiter grants a master on a clock edge where it is idle (`busy = 0`) and that master has `cs = 1`; the request reaches the targets only once `busy = 1`, and `busy` is released on the edge where the granted transfer returns `ready = 1`. With zero-wait-state targets an access therefore takes two cycles, also with `NB_MASTER = 1`.
+- The arbiter grants a master on a clock edge where it is idle (`busy = 0`) and that master has `cs = 1`; the request reaches the targets only once `busy = 1`, and `busy` is released on the edge where the granted transfer returns `ready = 1`, or where the granted master has dropped `cs` before `ready` (aborted transfer: protocol violation, reported by a simulation warning, the other masters are not blocked). With zero-wait-state targets an access therefore takes two cycles, also with `NB_MASTER = 1`.
 - `"roundrobin"` starts the search at the master following the last granted one; `"fix"` always starts at master 0.
 - An enabled `sbi_pipe` runs `IDLE -> PENDING -> RESPONSE -> IDLE`: the request is registered in `IDLE`, held with `cs = 1` in `PENDING` until the target answers, and the registered response (`ready = 1`) is presented to the initiator during `RESPONSE`.
 
@@ -398,11 +400,12 @@ asylum-infrastructure_icn/
 ├── sim/
 │   ├── tb_sbi_icn.vhd             # UVVM testbench top
 │   ├── tb_sbi_icn_pkg.vhd         # SBI BFM interface array type
-│   ├── tb_sbi_icn_suite_pkg.vhd   # Test suite (TC1..TC4)
+│   ├── tb_sbi_icn_suite_pkg.vhd   # Test suite (TC1..TC5)
 │   ├── tb_sbi_icn_tc1_pkg.vhd
 │   ├── tb_sbi_icn_tc2_pkg.vhd
 │   ├── tb_sbi_icn_tc3_pkg.vhd
-│   └── tb_sbi_icn_tc4_pkg.vhd     # Arbitration
+│   ├── tb_sbi_icn_tc4_pkg.vhd     # Arbitration
+│   └── tb_sbi_icn_tc5_pkg.vhd     # Aborted transfer
 ├── syn/
 │   └── sbi_icn_wrapper.vhd        # Lint / synthesis check wrapper (sbi_icn, flat SBI ports, address maps)
 └── .github/workflows/ci.yml       # CI (sim_basic, sim_one_hot, sim_pipe, sim_soc)

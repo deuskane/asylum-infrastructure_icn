@@ -62,7 +62,9 @@ begin
                 v_found   := true;
               end if;
             end loop;
-          elsif sbi_tgt_i.ready = '1' then
+          elsif sbi_tgt_i.ready = '1' or sbi_inis_i(master_id).cs = '0' then
+            -- End of transfer, or the granted master has withdrawn its request
+            -- (protocol violation): release the bus in both cases
             busy <= '0';
           end if;
         end if;
@@ -97,13 +99,28 @@ begin
                 end if;
               end if;
             end loop;
-          elsif sbi_tgt_i.ready = '1' then
+          elsif sbi_tgt_i.ready = '1' or sbi_inis_i(master_id).cs = '0' then
+            -- End of transfer, or the granted master has withdrawn its request
+            -- (protocol violation): release the bus in both cases
             busy <= '0';
           end if;
         end if;
       end if;
     end process;
   end generate gen_sel_rr;
+
+-- pragma translate_off
+  -- Protocol check: the granted master must keep cs until ready
+  process (clk_i) is
+  begin
+    if rising_edge(clk_i) then
+      if arst_b_i = '1' and cke_i = '1' and busy = '1' and sbi_tgt_i.ready = '0' then
+        assert sbi_inis_i(master_id).cs = '1'
+          report "[" & NAME & "] SBI Interconnect: master " & integer'image(master_id) & " released cs before ready (transfer aborted)" severity warning;
+      end if;
+    end if;
+  end process;
+-- pragma translate_on
 
   -- Signal Routing
   process (all) is
