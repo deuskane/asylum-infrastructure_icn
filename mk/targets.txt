@@ -8,8 +8,17 @@ lint_ghdl_synth_tb           : Synthesis check of sbi_icn_wrapper, address map o
 lint_ghdl_synth_tb_pipe      : Synthesis check of sbi_icn_wrapper, address map of tb_sbi_icn with sbi_pipe
 lint_ghdl_synth_width0       : Synthesis check of sbi_icn_wrapper, single-register targets (0-bit address width)
 lint_ghdl_width0             : Lint with GHDL of sbi_icn_wrapper, single-register targets (0-bit address width), configuration checks run
-sim_basic                    : Simulation of basic unit tests
-sim_one_hot                  : Simulation of basic unit tests with one-hot address decoding (roundrobin, or, wait states)
-sim_pipe                     : Simulation of basic unit tests with sbi_pipe on all master and target ports
-sim_soc                      : Simulation of basic unit tests with the SoC configuration (fix, or, external default slave, wait states)
+sim_basic                    : Simulation of sbi_icn (UVVM), roundrobin, mux, internal default slave, no wait state - every scenario
+sim_one_hot                  : Simulation of sbi_icn (UVVM), one-hot address decoding (roundrobin, or, internal default slave, 1 wait state per target index) - every scenario
+sim_pipe                     : Simulation of sbi_icn (UVVM), sbi_pipe on every master and target port (roundrobin, mux, internal default slave, 1 wait state per target index) - every scenario
+sim_soc                      : Simulation of sbi_icn (UVVM), SoC configuration (fix, or, external default slave, 2 wait states per target index) - build only (scenarios of TESTS_LIST)
+sim_soc_abort                : Simulation of sbi_icn (UVVM), SoC configuration - the granted master releases cs before ready, the other master is not locked out
+sim_soc_arbitration          : Simulation of sbi_icn (UVVM), SoC configuration - simultaneous requests of the two masters, first granted master
+sim_soc_clock_enable         : Simulation of sbi_icn (UVVM), SoC configuration - cke_i = 0 holds an access, before and after the grant
+sim_soc_contention           : Simulation of sbi_icn (UVVM), SoC configuration - back-to-back accesses of both masters, order of the grants
+sim_soc_default_slave        : Simulation of sbi_icn (UVVM), SoC configuration - accesses to unmapped addresses (default slave)
+sim_soc_exhaustive           : Simulation of sbi_icn (UVVM), SoC configuration - every address of every memory target, accesses switching from one target to the other
+sim_soc_latency              : Simulation of sbi_icn (UVVM), SoC configuration - cycles from the request to ready for every target port and the default slave
+sim_soc_reset                : Simulation of sbi_icn (UVVM), SoC configuration - request held through a reset, reset during an access
+sim_soc_simple               : Simulation of sbi_icn (UVVM), SoC configuration - each memory target written by a master and read back by the other one, address decoding
 
