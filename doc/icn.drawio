@@ -1,0 +1,196 @@
+<mxfile host="Electron">
+  <diagram name="Overview" id="icn-ov">
+    <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="icn-ov-1" value="generics: NB_MASTER, MASTER_SEL (fix / roundrobin), NB_TARGET, TARGET_SEL (or / mux), TARGET_ID, TARGET_ADDR_WIDTH, TARGET_ADDR_ENCODING (binary / one_hot), INTERNAL_DEFAULT_SLAVE, PIPEIN_ENABLE, PIPEOUT_ENABLE" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;verticalAlign=middle;rounded=0;fontSize=10;fontColor=#666666;fontStyle=2;align=center;" vertex="1" parent="1">
+          <mxGeometry x="160" y="80" width="860" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-2" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="160" y="130" width="860" height="470" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-3" value="sbi_icn" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="160" y="130" width="70" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-4" value="M" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="220" width="20" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-5" value="sbi_inis_i(0)&lt;br&gt;sbi_tgts_o(0)" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;verticalAlign=middle;rounded=0;fontSize=11;align=left;" vertex="1" parent="1">
+          <mxGeometry x="64" y="188" width="125" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="60" y="230" as="sourcePoint"/>
+            <mxPoint x="190" y="230" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-7" value="sbi_pipe&lt;br&gt;PIPEIN_ENABLE" style="rounded=0;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="190" y="205" width="90" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="280" y="230" as="sourcePoint"/>
+            <mxPoint x="340" y="230" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-9" value="M" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="360" width="20" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-10" value="sbi_inis_i(m)&lt;br&gt;sbi_tgts_o(m)" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;verticalAlign=middle;rounded=0;fontSize=11;align=left;" vertex="1" parent="1">
+          <mxGeometry x="64" y="328" width="125" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="60" y="370" as="sourcePoint"/>
+            <mxPoint x="190" y="370" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-12" value="sbi_pipe&lt;br&gt;PIPEIN_ENABLE" style="rounded=0;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="190" y="345" width="90" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="280" y="370" as="sourcePoint"/>
+            <mxPoint x="340" y="370" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-14" value="..." style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;verticalAlign=middle;rounded=0;fontSize=20;align=center;" vertex="1" parent="1">
+          <mxGeometry x="205" y="285" width="60" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-15" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="340" y="190" width="190" height="230" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-16" value="sbi_icn_mux_mst" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="340" y="190" width="130" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-17" value="busy, master_id&lt;br&gt;rr_ptr (roundrobin)" style="rounded=0;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="355" y="225" width="160" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-18" value="grant when idle:&lt;br&gt;fix = lowest index&lt;br&gt;roundrobin = after the last" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="355" y="290" width="160" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-19" value="request of master_id&lt;br&gt;ready to master_id only" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="355" y="355" width="160" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="530" y="250" as="sourcePoint"/>
+            <mxPoint x="570" y="250" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-21" value="sbi_ini&lt;br&gt;_mux" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;verticalAlign=middle;rounded=0;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="525" y="255" width="50" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=none;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="570" y="225" as="sourcePoint"/>
+            <mxPoint x="570" y="405" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="570" y="225" as="sourcePoint"/>
+            <mxPoint x="600" y="225" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-24" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="570" y="315" as="sourcePoint"/>
+            <mxPoint x="600" y="315" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-25" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="570" y="405" as="sourcePoint"/>
+            <mxPoint x="600" y="405" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-26" value="sbi_wrapper_target&lt;br&gt;decode, local address" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="600" y="200" width="170" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-27" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="770" y="225" as="sourcePoint"/>
+            <mxPoint x="800" y="225" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-28" value="sbi_pipe&lt;br&gt;PIPEOUT_ENABLE(t)" style="rounded=0;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="800" y="200" width="125" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-29" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="925" y="225" as="sourcePoint"/>
+            <mxPoint x="1060" y="225" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-30" value="S" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="215" width="20" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-31" value="sbi_inis_o(0)&lt;br&gt;sbi_tgts_i(0)" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;verticalAlign=middle;rounded=0;fontSize=11;align=left;" vertex="1" parent="1">
+          <mxGeometry x="930" y="183" width="125" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-32" value="sbi_wrapper_target&lt;br&gt;decode, local address" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="600" y="290" width="170" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-33" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="770" y="315" as="sourcePoint"/>
+            <mxPoint x="800" y="315" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-34" value="sbi_pipe&lt;br&gt;PIPEOUT_ENABLE(t)" style="rounded=0;whiteSpace=wrap;html=1;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="800" y="290" width="125" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-35" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=classic;startFill=1;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="925" y="315" as="sourcePoint"/>
+            <mxPoint x="1060" y="315" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-36" value="S" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="305" width="20" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-37" value="sbi_inis_o(t)&lt;br&gt;sbi_tgts_i(t)" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;verticalAlign=middle;rounded=0;fontSize=11;align=left;" vertex="1" parent="1">
+          <mxGeometry x="930" y="273" width="125" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-38" value="..." style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;verticalAlign=middle;rounded=0;fontSize=20;align=center;" vertex="1" parent="1">
+          <mxGeometry x="660" y="255" width="60" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-39" value="default slave: cs and not any_cs&lt;br&gt;sbi_default_slave (internal)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="600" y="380" width="170" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-40" value="INTERNAL_DEFAULT_SLAVE = false: wrapper and pipe of the last target port, S port NB_TARGET-1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;verticalAlign=middle;rounded=0;fontSize=10;fontColor=#666666;fontStyle=2;align=left;" vertex="1" parent="1">
+          <mxGeometry x="600" y="430" width="330" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-41" value="sbi_icn_mux_tgt&lt;br&gt;or: OR of the responses (others zeroed)&lt;br&gt;mux: response of the selected target" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="600" y="490" width="325" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-42" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="685" y="460" as="sourcePoint"/>
+            <mxPoint x="685" y="490" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-43" value="responses, tgt_cs" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;verticalAlign=middle;rounded=0;fontSize=11;align=left;" vertex="1" parent="1">
+          <mxGeometry x="690" y="460" width="220" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-44" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="600" y="520" as="sourcePoint"/>
+            <mxPoint x="435" y="420" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="435" y="520"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="icn-ov-45" value="sbi_tgt_mux" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;verticalAlign=middle;rounded=0;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="440" y="525" width="130" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="icn-ov-46" value="clk_i, cke_i (arbiter and sbi_pipe stages), arst_b_i&lt;br&gt;simulation only: address map checks" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;verticalAlign=middle;rounded=0;fontSize=10;fontColor=#666666;fontStyle=2;align=left;" vertex="1" parent="1">
+          <mxGeometry x="180" y="545" width="330" height="50" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
