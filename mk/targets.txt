@@ -21,4 +21,11 @@ sim_soc_exhaustive           : Simulation of sbi_icn (UVVM), SoC configuration -
 sim_soc_latency              : Simulation of sbi_icn (UVVM), SoC configuration - cycles from the request to ready for every target port and the default slave
 sim_soc_reset                : Simulation of sbi_icn (UVVM), SoC configuration - request held through a reset, reset during an access
 sim_soc_simple               : Simulation of sbi_icn (UVVM), SoC configuration - each memory target written by a master and read back by the other one, address decoding
+syn_default                  : Synthesis (Artix-7, sky130) of sbi_icn_wrapper, PicoSoC ICN2 (default generics)
+syn_one_hot                  : Synthesis (Artix-7, sky130) of sbi_icn_wrapper, 3 masters, 4 targets one_hot
+syn_picosoc_icn1             : Synthesis (Artix-7, sky130) of sbi_icn_wrapper, PicoSoC ICN1
+syn_picosoc_rr               : Synthesis (Artix-7, sky130) of sbi_icn_wrapper, PicoSoC ICN2 with 2 masters roundrobin
+syn_tb                       : Synthesis (Artix-7, sky130) of sbi_icn_wrapper, address map of tb_sbi_icn
+syn_tb_pipe                  : Synthesis (Artix-7, sky130) of sbi_icn_wrapper, address map of tb_sbi_icn with sbi_pipe
+syn_width0                   : Synthesis (Artix-7, sky130) of sbi_icn_wrapper, single-register targets (0-bit address width)
 
