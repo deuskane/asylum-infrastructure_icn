@@ -1,150 +1,116 @@
 <!--
-  README GENERATION INSTRUCTIONS (for the next regeneration run)
+  README MODEL (common to every Asylum IP, keep the same headings)
   ----------------------------------------------------------------
-  This README follows the common Asylum IP model. Regenerate it from the
-  sources, never from the previous README text alone.
-
-  Sources of truth (in priority order):
-    1. hdl/*.vhd            : entities, generics, ports, packages
-    2. hdl/csr/*.hjson      : register map (regtool); *_csr.md/.h are generated
-    3. <IP>.core            : VLNV (name), filesets, targets, depends, revisions
-    4. mk/targets.txt       : target list shown by `make help`; mk/defs.mk
-    5. sim/, syn/, esw/, boards/ : testbenches, constraints, software
-  Section order (keep it, same headings in every IP):
-    CI badge / Title + one-line description + VLNV / Table of Contents /
-    Introduction (Key Features) / Block Diagram / Top-Level (Parameters,
-    Ports, Instantiation Example) / HDL Modules / Register Map /
-    Verification / Synthesis / Design Notes (optional) /
-    Directory Structure / Dependencies
+  Regenerate from the sources, never from the previous README text alone:
+    hdl/*.vhd (entities, generics, ports), hdl/csr/*.hjson (register map),
+    <IP>.core (VLNV, targets, depends), mk/targets.txt, sim/, syn/, esw/.
+  Sections, in this order:
+    badges / title + one-line pitch / Overview / Features / Block Diagram /
+    Getting Started / Hardware Interfaces / Configuration / Resources /
+    Theory of Operation / Registers / Programmer's Guide /
+    Design Verification / Dependencies and Related IPs / License
   Rules:
-    - Language: English. Tables: Parameters = Name|Type|Default|Description,
-      Ports = Name|Direction|Type|Description (grouped by interface).
-    - Register Map: link to the generated hdl/csr/<X>_csr.md (plus the
-      .hjson source and _csr.h header); never copy register tables here.
-    - Top-Level = sbi_* wrapper if present, else the entity used by the
-      `default` target, else the main entity (libraries: list packages).
-    - Write "This IP has no software-visible registers." / "No dedicated
-      synthesis target ..." instead of removing a section.
-    - Keep still-accurate hand-written content (ISA tables, results,
-      images) in "Design Notes"; drop anything not backed by the sources.
-    - Block diagram: doc/<NAME>.drawio (NAME = 4th field of the VLNV),
-      top entity box with generics on top, inputs left, outputs right,
-      bus interfaces as bold arrows, internal blocks colour-coded
-      (CSR yellow, FIFO/memory green, core logic blue, external grey).
-      Update it whenever ports/generics/sub-blocks change.
-    - Do not edit generated files (hdl/csr/*_csr.*) or the CI badge URL.
+    - English, short and factual: every statement backed by the sources.
+    - No VLNV line: the version badge shows it.
+    - Badges: first line version, license; second line CI, lint, sim, syn.
+    - Block diagram and FSM: pages Overview and FSM of doc/<NAME>.drawio, exported to
+      doc/<NAME>-Overview.png and doc/<NAME>-FSM.png (make -C doc).
+    - Timing diagrams: WaveDrom source doc/<NAME>-<what>.json, rendered
+      doc/<NAME>-<what>.svg (make -C doc), shown as images.
+    - No CPU named (OpenBlaze, PicoBlaze, RISC-V) outside the CPU and SoC IPs.
+    - Registers: link to the generated hdl/csr/<X>_csr.md, never copy the tables.
+    - Tables: Configuration = Name|Type|Default|Description,
+      Hardware Interfaces = Name|Direction|Type|Description, grouped by interface.
+    - A section with nothing to say is one line ("This IP has no
+      software-visible registers."), never removed.
 -->
+[![Version](https://img.shields.io/github/v/tag/deuskane/asylum-infrastructure_icn?filter=asylum-infrastructure-icn-*&label=version&color=blue)](https://github.com/deuskane/asylum-infrastructure_icn/tags)
+[![License](https://img.shields.io/github/license/deuskane/asylum-infrastructure_icn)](LICENSE)
+
 [![CI](https://github.com/deuskane/asylum-infrastructure_icn/actions/workflows/ci.yml/badge.svg)](https://github.com/deuskane/asylum-infrastructure_icn/actions/workflows/ci.yml)
+[![lint](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fdeuskane%2Fasylum-infrastructure_icn%2Fbadges%2Flint.json)](https://github.com/deuskane/asylum-infrastructure_icn/actions/workflows/ci.yml)
+[![sim](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fdeuskane%2Fasylum-infrastructure_icn%2Fbadges%2Fsim.json)](https://github.com/deuskane/asylum-infrastructure_icn/actions/workflows/ci.yml)
+[![syn](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fdeuskane%2Fasylum-infrastructure_icn%2Fbadges%2Fsyn.json)](https://github.com/deuskane/asylum-infrastructure_icn/actions/workflows/ci.yml)
 
-# asylum-infrastructure_icn
+# SBI interconnect
 
-**SBI interconnect: N masters to M targets with fixed-priority or round-robin arbitration, binary or one-hot address decoding, default slave and optional pipeline stages.**
+**A small, readable bus interconnect in VHDL: N masters to M targets on the SBI bus, fixed-priority or round-robin arbitration, binary or one-hot address decoding, default slave and optional pipeline stages.**
 
-VLNV: `asylum:infrastructure:icn:1.4.0`
+Part of the [Asylum project](https://github.com/deuskane/asylum-project), a collection of small IP cores, written to be read and learned from.
 
 ## Table of Contents
 
-1. [Introduction](#introduction)
-2. [Block Diagram](#block-diagram)
-3. [Top-Level](#top-level)
-4. [HDL Modules](#hdl-modules)
-5. [Register Map](#register-map)
-6. [Verification](#verification)
-7. [Synthesis](#synthesis)
-8. [Design Notes](#design-notes)
-9. [Directory Structure](#directory-structure)
-10. [Dependencies](#dependencies)
+1. [Overview](#overview)
+2. [Features](#features)
+3. [Block Diagram](#block-diagram)
+4. [Getting Started](#getting-started)
+5. [Hardware Interfaces](#hardware-interfaces)
+6. [Configuration](#configuration)
+7. [Resources](#resources)
+8. [Theory of Operation](#theory-of-operation)
+9. [Registers](#registers)
+10. [Programmer's Guide](#programmers-guide)
+11. [Design Verification](#design-verification)
+12. [Dependencies and Related IPs](#dependencies-and-related-ips)
+13. [License](#license)
 
-## Introduction
+## Overview
 
-This IP is the bus interconnect of the Asylum SoCs. `sbi_icn` connects `NB_MASTER` SBI initiators to `NB_TARGET` SBI targets: an arbiter grants one master at a time, each target is selected by an address decoder (`sbi_wrapper_target`) that forwards only its local address bits, and the responses are merged back (wired-OR or multiplexer) to the granted master. Accesses that hit no target are answered by a default slave (internal, or an external target connected to the last port). Optional `sbi_pipe` stages can be inserted on every master input and on every target output to cut timing paths. In simulation, the interconnect prints its address map and checks it (one-hot IDs, alignment, overlaps).
+`sbi_icn` connects `NB_MASTER` SBI initiators (the simple bus of Asylum) to `NB_TARGET` SBI targets:
 
-### Key Features
+- an arbiter grants the bus to one master at a time,
+- each target has an address decoder that selects it and forwards only its local address bits,
+- the responses are merged back (wired-OR or multiplexer) to the granted master,
+- an access that hits no target is answered by a default slave, internal or connected to the last target port.
 
-- `NB_MASTER` initiator ports, arbitration `MASTER_SEL = "fix"` (lowest index first) or `"roundrobin"`
-- `NB_TARGET` target ports with a base address (`TARGET_ID`) and a local address width (`TARGET_ADDR_WIDTH`) per target
-- Address decoding `TARGET_ADDR_ENCODING = "binary"` (address MSBs compared with the ID) or `"one_hot"` (one address bit per target)
-- Response merge `TARGET_SEL = "or"` (non-selected targets zeroed, then ORed) or `"mux"` (selected target)
-- Default slave for unmapped addresses: internal `sbi_default_slave` (ready, read data 0) or external, on the last target port (`INTERNAL_DEFAULT_SLAVE = False`)
-- Optional registered stage per master input (`PIPEIN_ENABLE`) and per target output (`PIPEOUT_ENABLE`)
-- Response `info.name` set to `NAME`; target names used in the simulation reports
-- Simulation-only elaboration checks of the address map
-- Component declarations of all entities in `asylum.icn_pkg`
+Optional `sbi_pipe` stages on the master ports and on the target ports cut the timing paths. In simulation, the interconnect prints its address map and stops on an invalid one (one-hot IDs, alignment, overlaps).
+
+## Features
+
+- `NB_MASTER` initiator ports, arbitration `"fix"` (lowest index first) or `"roundrobin"` (search starts after the last granted master)
+- `NB_TARGET` target ports, each with a base address (`TARGET_ID`) and a local address width (`TARGET_ADDR_WIDTH`, 0 for a single-register target)
+- Address decoding `"binary"` (address MSBs compared with the ID) or `"one_hot"` (one address bit per target)
+- Response merge `"or"` (the responses of the targets not selected are zeroed, then ORed) or `"mux"` (response of the selected target)
+- Default slave for the unmapped addresses: internal (`ready` at once, read data 0) or external on the last target port
+- Optional registered stage per master port (`PIPEIN_ENABLE`) and per target port (`PIPEOUT_ENABLE`)
+- A granted master that drops `cs` before `ready` releases the bus (the other masters are not locked out)
+- Clock enable `cke_i`, asynchronous active-low reset
+- Simulation only: address map report and checks, warning on an aborted transfer, report of every access to the internal default slave
 
 ## Block Diagram
 
-Diagram: [doc/icn.drawio](doc/icn.drawio) (open with diagrams.net or the VS Code Draw.io extension).
+![Block diagram of sbi_icn](doc/icn-Overview.png)
 
-- Each master request `sbi_inis_i(m)` goes through an `sbi_pipe` (`ENABLE = PIPEIN_ENABLE = '1'`), then to the arbiter `sbi_icn_mux_mst`, which forwards the request of the granted master (`sbi_ini_mux`).
-- `NB_TARGET_INT` `sbi_wrapper_target` instances (`NB_TARGET`, or `NB_TARGET-1` with an external default slave) decode the address, generate `tgt_cs` and forward the local address to the target.
-- When no target is selected (`any_cs = 0`), the request is presented to the default slave: the internal `sbi_default_slave`, or the wrapper of the last target port.
-- Each target port goes through an `sbi_pipe` (`ENABLE = PIPEOUT_ENABLE(tgt) = '1'`) to `sbi_inis_o(tgt)` / `sbi_tgts_i(tgt)`.
-- `sbi_icn_mux_tgt` merges the target and default-slave responses (OR or mux) into `sbi_tgt_mux`, which the arbiter returns to the granted master only.
+## Getting Started
 
-## Top-Level
+The cores of the Asylum IPs are published in the FuseSoC library [asylum-cores](https://github.com/deuskane/asylum-cores) (with the UVVM core used by the testbench):
 
-Top-level entity: **`sbi_icn`** ([hdl/sbi_icn.vhd](hdl/sbi_icn.vhd)), library `asylum`, component declared in `asylum.icn_pkg`.
+```bash
+pip install fusesoc
+fusesoc library add https://github.com/deuskane/asylum-cores
+fusesoc run --target sim_soc_arbitration asylum:infrastructure:icn  # needs GHDL
+```
 
-### Parameters
-
-| Name | Type | Default | Description |
-|------|------|---------|-------------|
-| `NAME` | string | `"sbi_icn"` | Instance name: returned in `sbi_tgts_o(m).info.name`, used in simulation reports and forwarded to all sub-instances |
-| `NB_MASTER` | positive | `1` | Number of initiator ports |
-| `MASTER_SEL` | string | `"fix"` | Arbitration: `"fix"` (fixed priority, master 0 first) or `"roundrobin"` |
-| `NB_TARGET` | positive | `1` | Number of target ports (including the external default slave when `INTERNAL_DEFAULT_SLAVE = False`) |
-| `TARGET_SEL` | string | `"or"` | Response merge: `"or"` (responses of non-selected targets forced to 0, then ORed) or `"mux"` |
-| `TARGET_ID` | sbi_addrs_t | *(none)* | Base address (`binary`) or one-hot select vector (`one_hot`) of each target, `SBI_ADDR_WIDTH` bits each |
-| `TARGET_ADDR_WIDTH` | naturals_t | *(none)* | Local address width of each target (number of LSBs forwarded) |
-| `TARGET_ADDR_ENCODING` | string | *(none)* | `"binary"` or `"one_hot"` |
-| `INTERNAL_DEFAULT_SLAVE` | boolean | `True` | `True`: internal `sbi_default_slave`; `False`: the last target port (`NB_TARGET-1`) is the default slave, selected when no other target matches |
-| `PIPEOUT_ENABLE` | std_logic_vector(NB_TARGET-1 downto 0) | `(others => '0')` | Per target: `'1'` inserts an `sbi_pipe` stage on the target port |
-| `PIPEIN_ENABLE` | std_logic | `'0'` | `'1'` inserts an `sbi_pipe` stage on every master port |
-
-### Ports
-
-#### Clock & Reset
-
-| Name | Direction | Type | Description |
-|------|-----------|------|-------------|
-| `clk_i` | in | std_logic | Clock |
-| `cke_i` | in | std_logic | Clock enable (arbiter and pipe stages) |
-| `arst_b_i` | in | std_logic | Asynchronous reset, active low |
-
-#### Bus (SBI) - Masters
-
-| Name | Direction | Type | Description |
-|------|-----------|------|-------------|
-| `sbi_inis_i` | in | sbi_inis_t(NB_MASTER-1 downto 0) | Requests from the initiators (`cs`, `re`, `we`, `addr`, `wdata`) |
-| `sbi_tgts_o` | out | sbi_tgts_t(NB_MASTER-1 downto 0) | Responses to the initiators (`ready` only for the granted master, `rdata`, `info.name = NAME`) |
-
-#### Bus (SBI) - Targets
-
-| Name | Direction | Type | Description |
-|------|-----------|------|-------------|
-| `sbi_inis_o` | out | sbi_inis_t(NB_TARGET-1 downto 0) | Requests to the targets (`cs` decoded, local address zero-extended) |
-| `sbi_tgts_i` | in | sbi_tgts_t(NB_TARGET-1 downto 0) | Responses from the targets (`ready`, `rdata`, `info`) |
-
-### Instantiation Example
+To use the IP in your design, add `asylum:infrastructure:icn` to the `depend` list of your core and instantiate `sbi_icn` (library `asylum`):
 
 ```vhdl
 library asylum;
 use     asylum.sbi_pkg.all;
 use     asylum.icn_pkg.all;
 
-  -- 2 masters, 3 targets: 0x00-0x3F, 0x40-0x7F, 0x80-0x87
-  ins_sbi_icn : entity asylum.sbi_icn
+  -- 2 masters, 3 targets: 0x00-0x3F, 0x40-0x7F, 0x80-0x87, the rest to the default slave
+  ins_sbi_icn : sbi_icn
     generic map
     ( NAME                   => "icn"
      ,NB_MASTER              => 2
      ,MASTER_SEL             => "roundrobin"
      ,NB_TARGET              => 3
-     ,TARGET_SEL             => "mux"
-     ,TARGET_ID              => (0 => x"00", 1 => x"40", 2 => x"80")
-     ,TARGET_ADDR_WIDTH      => (0 => 6,     1 => 6,     2 => 3    )
+     ,TARGET_SEL             => "or"
+     ,TARGET_ID              => (x"00", x"40", x"80")
+     ,TARGET_ADDR_WIDTH      => (6, 6, 3)
      ,TARGET_ADDR_ENCODING   => "binary"
      ,INTERNAL_DEFAULT_SLAVE => true
-     ,PIPEOUT_ENABLE         => "100"   -- pipe stage on target 2 only
+     ,PIPEOUT_ENABLE         => "000"
      ,PIPEIN_ENABLE          => '0'
     )
     port map
@@ -158,263 +124,223 @@ use     asylum.icn_pkg.all;
     );
 ```
 
-The internal response signals are constrained with `SBI_DATA_WIDTH` (8 bits, `asylum.sbi_pkg`); the request `addr` / `wdata` widths follow `sbi_inis_i(0)`.
+[PicoSoC](https://github.com/deuskane/asylum-soc-picosoc) is a complete example: it uses three interconnects, two of them chained through the external default slave ([syn/sbi_icn_wrapper.vhd](syn/sbi_icn_wrapper.vhd) has the address maps of these two).
 
-## HDL Modules
+## Hardware Interfaces
 
-| File | Unit | Kind | Role |
-|------|------|------|------|
-| [hdl/icn_pkg.vhd](hdl/icn_pkg.vhd) | `icn_pkg` | package | Component declarations of all the entities below |
-| [hdl/sbi_icn.vhd](hdl/sbi_icn.vhd) | `sbi_icn` | entity | Top-level interconnect: pipes, arbiter, decoders, default slave, response merge, simulation checks |
-| [hdl/sbi_icn_mux_mst.vhd](hdl/sbi_icn_mux_mst.vhd) | `sbi_icn_mux_mst` | entity | Master arbiter and request multiplexer |
-| [hdl/sbi_icn_mux_tgt.vhd](hdl/sbi_icn_mux_tgt.vhd) | `sbi_icn_mux_tgt` | entity | Target response merge (OR / mux) with default-slave response |
-| [hdl/sbi_wrapper_target.vhd](hdl/sbi_wrapper_target.vhd) | `sbi_wrapper_target` | entity | Address decoder of one target: chip select, local address, optional response zeroing |
-| [hdl/sbi_pipe.vhd](hdl/sbi_pipe.vhd) | `sbi_pipe` | entity | Optional registered SBI stage (request and response) |
-| [hdl/sbi_default_slave.vhd](hdl/sbi_default_slave.vhd) | `sbi_default_slave` | entity | Default slave: always ready, read data 0 |
+Top-level entity: **`sbi_icn`** ([hdl/sbi_icn.vhd](hdl/sbi_icn.vhd)), component in `asylum.icn_pkg`.
 
-### sbi_icn_mux_mst
-
-#### Parameters
-
-| Name | Type | Default | Description |
-|------|------|---------|-------------|
-| `NAME` | string | `"sbi_icn"` | Instance name (not used in the architecture) |
-| `NB_MASTER` | positive | `1` | Number of masters |
-| `MASTER_SEL` | string | `"fix"` | `"fix"`: lowest-index requesting master; `"roundrobin"`: search starts after the last granted master |
-
-#### Ports
+### Clock and Reset
 
 | Name | Direction | Type | Description |
 |------|-----------|------|-------------|
-| `clk_i` | in | std_logic | Clock |
-| `cke_i` | in | std_logic | Clock enable |
+| `clk_i` | in | std_logic | Clock, the only clock of the IP |
+| `cke_i` | in | std_logic | Clock enable of the arbiter and of the `sbi_pipe` stages |
 | `arst_b_i` | in | std_logic | Asynchronous reset, active low |
-| `sbi_inis_i` | in | sbi_inis_t(NB_MASTER-1 downto 0) | Master requests |
-| `sbi_tgts_o` | out | sbi_tgts_t(NB_MASTER-1 downto 0) | Master responses (`ready` forced to 0 except for the granted master) |
-| `sbi_ini_o` | out | sbi_ini_t | Request of the granted master (`cs` gated by `busy`) |
-| `sbi_tgt_i` | in | sbi_tgt_t | Response from the interconnect |
 
-### sbi_icn_mux_tgt
-
-#### Parameters
-
-| Name | Type | Default | Description |
-|------|------|---------|-------------|
-| `NAME` | string | `"sbi_icn"` | Written in `sbi_tgt_o.info.name` |
-| `NB_TARGET` | positive | `1` | Number of targets |
-| `TARGET_SEL` | string | `"or"` | `"or"`: OR of all responses and of the default slave; `"mux"`: response of the target whose `tgt_cs_i` is set (highest index wins), default slave otherwise |
-
-#### Ports
+### Bus (SBI), masters
 
 | Name | Direction | Type | Description |
 |------|-----------|------|-------------|
-| `sbi_tgts_i` | in | sbi_tgts_t(NB_TARGET-1 downto 0) | Target responses (from the wrappers) |
-| `sbi_tgt_ds_i` | in | sbi_tgt_t | Default slave response |
-| `tgt_cs_i` | in | std_logic_vector(NB_TARGET-1 downto 0) | Target chip selects (used by `"mux"`) |
-| `sbi_tgt_o` | out | sbi_tgt_t | Merged response |
+| `sbi_inis_i` | in | sbi_inis_t(NB_MASTER-1 downto 0) | Requests of the masters (`cs`, `re`, `we`, `addr`, `wdata`); the widths of `addr` / `wdata` follow `sbi_inis_i(0)` |
+| `sbi_tgts_o` | out | sbi_tgts_t(NB_MASTER-1 downto 0) | Responses to the masters: `ready` only for the granted master, `rdata`, `info.name = NAME` |
 
-### sbi_wrapper_target
-
-#### Parameters
-
-| Name | Type | Default | Description |
-|------|------|---------|-------------|
-| `NAME` | string | `"sbi_icn"` | Instance name (not used in the architecture) |
-| `SIZE_DATA` | natural | `8` | Data width (not used in the architecture; `sbi_icn` passes `SBI_DATA_WIDTH`) |
-| `SIZE_ADDR_IP` | natural | `0` | Local address width: number of address LSBs forwarded to the target |
-| `ID` | std_logic_vector(SBI_ADDR_WIDTH-1 downto 0) | `(others => '0')` | Base address (`binary`) or one-hot select vector (`one_hot`) |
-| `ADDR_ENCODING` | string | `"binary"` | `"binary"`: `cs` when `addr(MSB downto SIZE_ADDR_IP) = ID(MSB downto SIZE_ADDR_IP)`; `"one_hot"`: `cs` when `addr(IDX) = 1`, `IDX` = index of the bit set in `ID` |
-| `TGT_ZEROING` | boolean | `false` | `true`: `rdata` and `ready` forced to 0 when the target is not selected |
-
-#### Ports
+### Bus (SBI), targets
 
 | Name | Direction | Type | Description |
 |------|-----------|------|-------------|
-| `cs_o` | out | std_logic | Target selected (`sbi_ini_i.cs` and address match) |
-| `sbi_ini_o` | out | sbi_ini_t | Request to the target: decoded `cs`, `re` / `we` / `wdata` unchanged, `addr` = local address zero-extended |
-| `sbi_tgt_i` | in | sbi_tgt_t | Response from the target |
-| `sbi_ini_i` | in | sbi_ini_t | Request from the bus |
-| `sbi_tgt_o` | out | sbi_tgt_t | Response to the bus (`info` forwarded from the target) |
+| `sbi_inis_o` | out | sbi_inis_t(NB_TARGET-1 downto 0) | Requests to the targets: decoded `cs`, local address zero-extended, `re` / `we` / `wdata` of the granted master |
+| `sbi_tgts_i` | in | sbi_tgts_t(NB_TARGET-1 downto 0) | Responses of the targets (`ready`, `rdata`, `info`; `info.name` is used in the simulation reports) |
 
-### sbi_pipe
+The response data width is `SBI_DATA_WIDTH` (8 bits, `asylum.sbi_pkg`).
 
-#### Parameters
+## Configuration
 
-| Name | Type | Default | Description |
-|------|------|---------|-------------|
-| `NAME` | string | `"sbi_icn"` | Prefix of the `VERBOSE` reports |
-| `ENABLE` | boolean | `true` | `true`: registered stage; `false`: wires (`sbi_ini_o <= sbi_ini_i`, `sbi_tgt_o <= sbi_tgt_i`) |
-| `VERBOSE` | boolean | `false` | Simulation only: report every write / read crossing the stage |
-
-#### Ports
-
-| Name | Direction | Type | Description |
-|------|-----------|------|-------------|
-| `clk_i` | in | std_logic | Clock |
-| `cke_i` | in | std_logic | Clock enable |
-| `arst_b_i` | in | std_logic | Asynchronous reset, active low |
-| `sbi_ini_i` | in | sbi_ini_t | Request from the initiator side |
-| `sbi_tgt_o` | out | sbi_tgt_t | Response to the initiator side |
-| `sbi_ini_o` | out | sbi_ini_t | Request to the target side |
-| `sbi_tgt_i` | in | sbi_tgt_t | Response from the target side |
-
-### sbi_default_slave
-
-#### Parameters
+Generics of `sbi_icn`:
 
 | Name | Type | Default | Description |
 |------|------|---------|-------------|
-| `NAME` | string | `"sbi_icn"` | `info.name = NAME & ".default_slave"`, prefix of the simulation report |
+| `NAME` | string | `"sbi_icn"` | Instance name: `info.name` of the responses, prefix of the simulation reports |
+| `NB_MASTER` | positive | `1` | Number of master ports |
+| `MASTER_SEL` | string | `"fix"` | Arbitration: `"fix"` (lowest index first) or `"roundrobin"` |
+| `NB_TARGET` | positive | `1` | Number of target ports (with the external default slave when `INTERNAL_DEFAULT_SLAVE = false`) |
+| `TARGET_SEL` | string | `"or"` | Response merge: `"or"` (responses of the targets not selected zeroed, then ORed) or `"mux"` |
+| `TARGET_ID` | sbi_addrs_t | *(none)* | Base address (`"binary"`) or select bit (`"one_hot"`) of each target |
+| `TARGET_ADDR_WIDTH` | naturals_t | *(none)* | Local address width of each target: number of address LSBs forwarded |
+| `TARGET_ADDR_ENCODING` | string | *(none)* | `"binary"` or `"one_hot"` |
+| `INTERNAL_DEFAULT_SLAVE` | boolean | `true` | `true`: internal default slave; `false`: the last target port is the default slave (`TARGET_ID` 0, full address width) |
+| `PIPEOUT_ENABLE` | std_logic_vector(NB_TARGET-1 downto 0) | `(others => '0')` | Per target port, `'1'`: `sbi_pipe` stage on the port |
+| `PIPEIN_ENABLE` | std_logic | `'0'` | `'1'`: `sbi_pipe` stage on every master port |
 
-#### Ports
+Address map rules, checked in simulation (a violation stops the elaboration with a failure):
 
-| Name | Direction | Type | Description |
-|------|-----------|------|-------------|
-| `clk_i` | in | std_logic | Clock (simulation report only) |
-| `cke_i` | in | std_logic | Clock enable (simulation report only) |
-| `arst_b_i` | in | std_logic | Asynchronous reset, active low (not used) |
-| `sbi_ini_i` | in | sbi_ini_t | Request |
-| `sbi_tgt_o` | out | sbi_tgt_t | Response: `ready = cs`, `rdata = 0` |
+- `"binary"`: `TARGET_ID(t)` aligned on `2**TARGET_ADDR_WIDTH(t)`, no overlap between targets;
+- `"one_hot"`: one bit set in each `TARGET_ID`, and the local address bits of every target below the select bit of every target; the default slave must then be internal (an external one needs `TARGET_ID` 0);
+- external default slave: `TARGET_ID` 0 and `TARGET_ADDR_WIDTH` = address width.
 
-## Register Map
+## Resources
+
+Figures of the `syn_*` targets (`make nonreg_syn`, see [Targets](#targets)): [syn/sbi_icn_wrapper.vhd](syn/sbi_icn_wrapper.vhd) (flat SBI ports, address map selected by `ADDR_MAP`) with the generics of each configuration, synthesized by Yosys and its GHDL plugin; the reports are in the build directory of each target.
+
+| Configuration | LUT¹ | LUTRAM¹ | FF¹ | CARRY4¹ | MUXF7/F8¹ | BRAM¹ | DSP¹ | Area² (µm²) | kGE³ |
+|---|---|---|---|---|---|---|---|---|---|
+| `syn_default` (PicoSoC ICN2: 1 master, 10 targets, or) | 72 | 0 | 1 | 0 | 29 | 0 | 0 | 583.06 | 0.155 |
+| `syn_picosoc_icn1` (1 master, 2 targets + external default slave) | 30 | 0 | 1 | 0 | 25 | 0 | 0 | 255.24 | 0.068 |
+| `syn_picosoc_rr` (ICN2 map, 2 masters round robin) | 142 | 0 | 3 | 0 | 64 | 0 | 0 | 920.88 | 0.245 |
+| `syn_tb` (2 masters round robin, 3 targets, mux) | 42 | 0 | 3 | 0 | 3 | 0 | 0 | 575.55 | 0.153 |
+| `syn_tb_pipe` (`syn_tb` with `sbi_pipe` on the 2 master and 3 target ports) | 114 | 0 | 152 | 0 | 2 | 0 | 0 | 5709.23 | 1.521 |
+| `syn_one_hot` (3 masters, 4 one-hot targets) | 54 | 0 | 3 | 0 | 0 | 0 | 0 | 721.94 | 0.192 |
+| `syn_width0` (1 master, 2 single-register targets + 1 of 7 bits) | 27 | 0 | 1 | 0 | 5 | 0 | 0 | 217.71 | 0.058 |
+
+¹ Xilinx Artix-7 (LUT6), Yosys 0.33 `synth_xilinx -flatten -noiopad -noclkbuf`, before place and route: every cell of the netlist is counted, Vivado may differ. An `INV` counts as a `LUT1`: `synth_xilinx` puts one on the reset pin of each flip-flop with the active-low reset. The interconnect has no memory: no LUTRAM, no BRAM.
+
+² SkyWater sky130 `sky130_fd_sc_hd`, typical corner (tt, 25 °C, 1.80 V), Yosys 0.33 `synth` + `dfflibmap` + `abc -liberty`: standard-cell area only, no timing constraint, no buffering, clock tree or placement.
+
+³ Area in thousands of NAND2 gate equivalents (`sky130_fd_sc_hd__nand2_1` = 3.7536 µm²).
+
+The interconnect is mostly combinational: the arbiter keeps `busy` (and `master_id`, `rr_ptr` with several masters); each enabled `sbi_pipe` registers a whole request and response.
+
+## Theory of Operation
+
+### Hierarchy
+
+| File | Unit | Role |
+|------|------|------|
+| [hdl/sbi_icn.vhd](hdl/sbi_icn.vhd) | `sbi_icn` | Top level: pipe stages, arbiter, decoders, default slave, response merge, simulation checks |
+| [hdl/sbi_icn_mux_mst.vhd](hdl/sbi_icn_mux_mst.vhd) | `sbi_icn_mux_mst` | Arbiter and request multiplexer |
+| [hdl/sbi_wrapper_target.vhd](hdl/sbi_wrapper_target.vhd) | `sbi_wrapper_target` | Address decoder of one target: `cs`, local address, response zeroing (`"or"`) |
+| [hdl/sbi_default_slave.vhd](hdl/sbi_default_slave.vhd) | `sbi_default_slave` | Internal default slave: `ready = cs`, read data 0 |
+| [hdl/sbi_icn_mux_tgt.vhd](hdl/sbi_icn_mux_tgt.vhd) | `sbi_icn_mux_tgt` | Response merge (OR / mux) |
+| [hdl/sbi_pipe.vhd](hdl/sbi_pipe.vhd) | `sbi_pipe` | Optional registered stage (request and response) |
+| [hdl/icn_pkg.vhd](hdl/icn_pkg.vhd) | `icn_pkg` | Components of the entities above |
+
+### Arbitration
+
+The arbiter grants a master on a clock edge where the bus is idle (`busy = 0`) and that master has `cs = 1`: `"fix"` takes the lowest index, `"roundrobin"` searches from the master that follows the last granted one. The request reaches the targets only once `busy = 1`, and `busy` is released on the edge where the target answers `ready = 1`. An access therefore takes two cycles with a target without wait state, also with a single master:
+
+![Two masters request in the same cycle](doc/icn-arbitration.svg)
+
+Under contention, `"fix"` keeps the bus to master 0 as long as it requests back-to-back; `"roundrobin"` alternates.
+
+The granted master must keep its request until `ready`. If it drops `cs` before (an aborted transfer, a protocol violation, e.g. a master reset while waiting on a slow target), the arbiter releases the bus on the next edge, so the other masters are not locked out; a simulation warning reports it. An `sbi_pipe` on the path does not follow the abort: an `sbi_pipe` that has already registered the request completes it with the target, and its response can then be returned to the next access to that target (the `abort` scenario runs without `sbi_pipe`).
+
+### Address decoding
+
+- `"binary"`: target `t` is selected when the address bits above `TARGET_ADDR_WIDTH(t)` equal those of `TARGET_ID(t)`; its range is `TARGET_ID(t)` to `TARGET_ID(t) + 2**TARGET_ADDR_WIDTH(t) - 1`.
+- `"one_hot"`: target `t` is selected when the address bit at the index of the bit set in `TARGET_ID(t)` is 1.
+- The target receives `addr(TARGET_ADDR_WIDTH(t)-1 downto 0)` zero-extended to the bus width; `re`, `we` and `wdata` go to every target, only `cs` is decoded.
+- `"or"`: a target not selected has its `ready` and `rdata` forced to 0 before the OR, so a target may drive anything when it is not selected. `"mux"` takes the response of the selected target.
+
+### Default slave
+
+- Internal (`INTERNAL_DEFAULT_SLAVE = true`): `sbi_default_slave` gets `cs` when no target is selected and answers at once (`ready = cs`) with read data 0; writes are ignored.
+- External (`INTERNAL_DEFAULT_SLAVE = false`): the last target port gets the accesses that no other target claims, with the full address (`TARGET_ID` 0, full width). Chaining two interconnects this way gives a hierarchical address map.
+
+### Latency
+
+From the request of a master to its `ready`, with the bus idle: 2 cycles (grant, then the answer of the target) + the wait states of the target + 2 cycles per enabled `sbi_pipe` on the path (master port, target port; the internal default slave has no target port). The `latency` scenario checks this for every target port and both masters.
+
+### Clock enable
+
+`cke_i = 0` freezes the arbiter and the `sbi_pipe` stages: a pending request is not granted, an access in a pipe stage waits. The path from a granted master to its target is combinational: a target that answers at once completes the access even when `cke_i = 0`.
+
+## Registers
 
 This IP has no software-visible registers.
 
-## Verification
+## Programmer's Guide
 
-### Testbenches
+This IP has no software-visible registers: software sees the targets at the addresses of `TARGET_ID`, and reads 0 at an unmapped address with the internal default slave.
+
+## Design Verification
+
+### Testbench
 
 | File | DUT | Description |
 |------|-----|-------------|
-| [sim/tb_sbi_icn.vhd](sim/tb_sbi_icn.vhd) + [sim/tb_sbi_icn_pkg.vhd](sim/tb_sbi_icn_pkg.vhd), [sim/tb_sbi_icn_suite_pkg.vhd](sim/tb_sbi_icn_suite_pkg.vhd) | `sbi_icn` (`NB_MASTER = 2`, 3 memory targets; generics `MASTER_SEL` (`"roundrobin"`), `TARGET_SEL` (`"mux"`), `TARGET_ADDR_ENCODING` (`"binary"`: IDs `0x00` / `0x40` / `0x80`, 6-bit local addresses; `"one_hot"`: IDs `0x20` / `0x40` / `0x80`, 5-bit local addresses), `INTERNAL_DEFAULT_SLAVE` (`true`; `false` adds a 4th target port, ID 0 and full address width, with a memory model as default slave), `WAIT_STATES` (`0`: target `i` answers after `WAIT_STATES*i` cycles), `PIPEIN` / `PIPEOUT` (`false`: `PIPEIN_ENABLE = '1'` / `PIPEOUT_ENABLE` all `'1'`)) | UVVM testbench: two masters driven by the SBI BFM (`bitvis_vip_sbi`) or by the concurrent driver of TC4, memory models as targets. Out of an access, a target drives `ready = 1` and `rdata = 0xFF`, and wrong data during its wait states, so the `"or"` zeroing and the `"mux"` selection are checked. A monitor checks on every cycle that at most one master receives `ready`, and only a master with `cs = 1`. The suite runs TC1 to TC4 and ends with `report_alert_counters(FINAL)` |
-| [sim/tb_sbi_icn_tc1_pkg.vhd](sim/tb_sbi_icn_tc1_pkg.vhd) | idem | TC1: write / read-check on each target, data written by one master and checked by the other |
-| [sim/tb_sbi_icn_tc2_pkg.vhd](sim/tb_sbi_icn_tc2_pkg.vhd) | idem | TC2: default slave: write to an unmapped address (`0xC0` binary, `0x00` one-hot), read it back (`0x00` with the internal default slave, the written data with the external one) and read a second unmapped address (`0x00`) |
-| [sim/tb_sbi_icn_tc3_pkg.vhd](sim/tb_sbi_icn_tc3_pkg.vhd) | idem | TC3: exhaustive write / check of all the words of targets 0 and 1, then back-to-back accesses to different targets |
-| [sim/tb_sbi_icn_tc4_pkg.vhd](sim/tb_sbi_icn_tc4_pkg.vhd) | idem | TC4: arbitration, both masters driven in the same cycles. Simultaneous requests after a single access of M0 (first grant: M0 with `"fix"`, M1 with `"roundrobin"`) and of M1 (M0 first in both modes); then 8 back-to-back writes per master to two targets with different wait states, and 8 cross reads (each master reads the data of the other). Read data are checked; the completion order must alternate with `"roundrobin"`, start with M0 with `"fix"` (and, without input pipe, M0 must keep the bus while it requests) |
-| [sim/tb_sbi_icn_tc5_pkg.vhd](sim/tb_sbi_icn_tc5_pkg.vhd) | idem | TC5: aborted transfer. M0 starts a read of the slowest target (at least 2 wait states) and releases `cs` one cycle after the grant, before `ready`; M1 must then complete a write within 50 cycles (read back by M0). Needs 2 masters, such a target and no input pipe: run by `sim_soc` and `sim_one_hot`, skipped by `sim_basic` and `sim_pipe` |
+| [sim/icn/tb_sbi_icn.vhd](sim/icn/tb_sbi_icn.vhd) | `sbi_icn` | Self-checking UVVM testbench: 2 masters (SBI VIP, or driven cycle by cycle for the arbitration, latency and reset scenarios), 3 memory targets that answer after `WAIT_STATES*i` cycles, internal default slave or a memory model on a 4th target port. Out of an access a target drives `ready = 1` and `rdata = 0xFF`, and wrong data during its wait states, so the `"or"` zeroing and the `"mux"` selection are checked. Monitors on every cycle: a master gets `ready` only while it requests, at most one master gets `ready` and at most one target port is selected, `ready` / `cs` never X, a target sees its local address and either `re` or `we`. Generics `TESTS_LIST`, `MASTER_SEL`, `TARGET_SEL`, `TARGET_ADDR_ENCODING` (binary: targets at 0x00 / 0x40 / 0x80, 6-bit local addresses; one-hot: 0x20 / 0x40 / 0x80, 5 bits), `INTERNAL_DEFAULT_SLAVE`, `WAIT_STATES`, `PIPEIN`, `PIPEOUT`. One package per scenario (`tb_sbi_icn_<name>_pkg`), names, applicability and dispatch in [tb_sbi_icn_tests_pkg](sim/icn/tb_sbi_icn_tests_pkg.vhd), helpers (accesses, cycle-driven accesses, concurrent masters, reset pulse) in [tb_sbi_icn_bfm_pkg](sim/icn/tb_sbi_icn_bfm_pkg.vhd) |
 
-`sim_pipe` runs the suite with an `sbi_pipe` stage on every master and target port, so the `sbi_pipe` protocol check (request stable while pending) is active on all of them.
+### Scenarios (`TESTS_LIST`)
+
+The scenarios are chosen at run time with the generic `TESTS_LIST`: names separated by `,` without space (`latency,reset,latency`), a name may be repeated. The sequencer first checks every name (an unknown name, or a scenario that does not apply to the configuration, is a `TB_ERROR` before any scenario runs), then for each scenario drives a reset pulse with the masters idle and `cke_i = 1`, logs `TEST <i>/<N> : <name>` and runs it: each scenario starts from reset and writes what it reads. The empty list (default) only compiles and elaborates the testbench. The list is parsed with `list_length` / `list_item` / `list_contains` of `asylum.string_pkg` (`asylum:utils:pkg` >= 1.10.0).
+
+Checks counted as the `=> OK` lines of the log, reference configuration `sim_soc`:
+
+| Name | Checks | Description |
+|------|--------|-------------|
+| `simple` | 9 | Each memory target written by a master and read back by the other one; the same offset of every target written with a different value and read back (an access selects one target only) |
+| `default_slave` | 2 | Two unmapped addresses written and read: data 0 with the internal default slave, the written data with the external one |
+| `exhaustive` | 194 | Every address of every memory target written by master 0 and read back by master 1, then accesses switching from one target to the other |
+| `arbitration` | 6 | Simultaneous requests after a single access of M1, then of M0: `"fix"` grants M0 first, `"roundrobin"` the master not granted last |
+| `contention` | 34 | 8 back-to-back writes per master to two targets with different wait states, then 8 cross reads: M0 granted first, alternation with `"roundrobin"`, M0 keeps the bus with `"fix"` (without input pipe) |
+| `abort` | 3 | M0 drops `cs` one cycle after its grant on a slow target: M1 gets the bus one cycle later, its write is read back. Needs a memory target with wait states and no `PIPEIN` |
+| `latency` | 8 | Each master alone reads every target port (and the internal default slave): cycles from the request to `ready`, see [Latency](#latency) |
+| `clock_enable` | 5 | `cke_i = 0`: no grant for 8 cycles, then the latency of an idle bus; `cke_i = 0` during 4 cycles after a grant delays the access by 4 cycles |
+| `reset` | 4 | A request held through a reset is served after the release with the latency of an idle bus; a reset during an access cancels it, the next access to the same target gets its own data |
+
+Configurations:
+
+| Configuration | `MASTER_SEL` | `TARGET_SEL` | Decoding | Default slave | `WAIT_STATES` | Pipes | Scenarios (checks) |
+|---|---|---|---|---|---|---|---|
+| `sim_soc` (reference) | fix | or | binary | external | 2 | none | all, one target each (265) |
+| `sim_basic` | roundrobin | mux | binary | internal | 0 | none | all but `abort` (276) |
+| `sim_pipe` | roundrobin | mux | binary | internal | 1 | master and target ports | all but `abort` (276) |
+| `sim_one_hot` | roundrobin | or | one_hot | internal | 1 | none | all (183) |
+
+The testbench was validated with 31 RTL mutants (arbiter priority, round-robin pointer, bus release, `busy` reset, request gating, ready routing, `cke_i`, response merge, decoders, local address, `re`, zeroing, default slave, `sbi_pipe` states and registers, pipe enables): each one is killed by at least one scenario run alone.
 
 ### Targets
 
 | Target | Toplevel | Description |
 |--------|----------|-------------|
-| `default` | *(none)* | HDL fileset only (not a simulation) |
-| `sim_basic` | `tb_sbi_icn` | Simulation of basic unit tests (GHDL, UVVM), no pipe stage |
-| `sim_one_hot` | `tb_sbi_icn` | Same suite with `TARGET_ADDR_ENCODING=one_hot`, `TARGET_SEL=or`, `WAIT_STATES=1` |
-| `sim_pipe` | `tb_sbi_icn` | Same suite with `PIPEIN=true`, `PIPEOUT=true` (`sbi_pipe` on all master and target ports) |
-| `sim_soc` | `tb_sbi_icn` | Same suite with the configuration of the PicoSoC interconnects: `MASTER_SEL=fix`, `TARGET_SEL=or`, `INTERNAL_DEFAULT_SLAVE=false`, `WAIT_STATES=2` |
-| `lint_ghdl` | `asylum.sbi_icn_wrapper` | Lint: GHDL `-Wall` analysis and elaboration (empty simulation) of `sbi_icn` (and so of every entity of `hdl/`) in a wrapper with flat SBI ports and an address map selected by `ADDR_MAP` (`syn/sbi_icn_wrapper.vhd`, default: ICN2 of PicoSoC) |
-| `lint_ghdl_synth_default` | `asylum.sbi_icn_wrapper` | Synthesis check (see below), PicoSoC ICN2 (default generics) |
-| `lint_ghdl_synth_picosoc_icn1` | `asylum.sbi_icn_wrapper` | Synthesis check, PicoSoC ICN1: `ADDR_MAP=picosoc_icn1`, `INTERNAL_DEFAULT_SLAVE=false` |
-| `lint_ghdl_synth_picosoc_rr` | `asylum.sbi_icn_wrapper` | Synthesis check, PicoSoC ICN2 with 2 masters roundrobin: `NB_MASTER=2`, `MASTER_SEL=roundrobin` |
-| `lint_ghdl_synth_tb` | `asylum.sbi_icn_wrapper` | Synthesis check, address map of tb_sbi_icn: `NB_MASTER=2`, `MASTER_SEL=roundrobin`, `TARGET_SEL=mux`, `ADDR_MAP=tb` |
-| `lint_ghdl_synth_tb_pipe` | `asylum.sbi_icn_wrapper` | Synthesis check, address map of tb_sbi_icn with sbi_pipe: `NB_MASTER=2`, `MASTER_SEL=roundrobin`, `TARGET_SEL=mux`, `ADDR_MAP=tb`, `PIPEIN=true`, `PIPEOUT=true` |
-| `lint_ghdl_synth_one_hot` | `asylum.sbi_icn_wrapper` | Synthesis check, 3 masters, 4 targets one_hot: `NB_MASTER=3`, `ADDR_MAP=one_hot` |
-| `lint_ghdl_width0` | `asylum.sbi_icn_wrapper` | Lint as `lint_ghdl` with `ADDR_MAP=width0`: its empty simulation runs the configuration checks of `sbi_icn` (elaboration-time reports), which the `lint_ghdl_synth_*` targets (`--no-run`) do not |
-| `lint_ghdl_synth_width0` | `asylum.sbi_icn_wrapper` | Synthesis check, single-register targets: `ADDR_MAP=width0` (targets at `0x00` and `0x01` with a 0-bit address width, one of 7 bits at `0x80`) |
+| `default` | | HDL fileset (not a simulation) |
+| `sim_soc` | `tb_sbi_icn` | Reference configuration (fix, or, external default slave, 2 wait states per target index): build and elaboration only (`TESTS_LIST` empty), base of the scenario targets |
+| `sim_soc_<name>` | `tb_sbi_icn` | One target per scenario: `sim_soc_simple`, `_default_slave`, `_exhaustive`, `_arbitration`, `_contention`, `_abort`, `_latency`, `_clock_enable`, `_reset` (265 checks in all) |
+| `sim_basic`, `sim_pipe`, `sim_one_hot` | `tb_sbi_icn` | Other configurations (see above), every scenario that applies |
+| `lint_ghdl` | `asylum.sbi_icn_wrapper` | GHDL `-Wall` analysis and elaboration of [syn/sbi_icn_wrapper.vhd](syn/sbi_icn_wrapper.vhd) (default map: PicoSoC ICN2) |
+| `lint_ghdl_width0` | `asylum.sbi_icn_wrapper` | As `lint_ghdl` with `ADDR_MAP=width0`: its empty simulation runs the address map checks of `sbi_icn` |
+| `lint_ghdl_synth_<config>` | `asylum.sbi_icn_wrapper` | `ghdl --synth` check (no latch, synthesizable) for 7 configurations: `default`, `picosoc_icn1`, `picosoc_rr`, `tb`, `tb_pipe`, `one_hot`, `width0` |
+| `syn_<config>` | `asylum.sbi_icn_wrapper` | Synthesis with Yosys, Artix-7 and sky130 (see [Resources](#resources)), same 7 configurations as `lint_ghdl_synth_<config>` |
 
-A `lint_ghdl_synth_*` target is `lint_ghdl` with the generics of its configuration (FuseSoC `parameters`) and a `pre_run` hook, `ghdl_synth.sh` of `asylum:utils:ghdl_synth`, which adds `include ghdl_synth.mk` to the Makefile generated by edalize. The run step (`make run EXTRA_OPTIONS=<generics>`) then runs, in the build directory:
+The reference configuration of the testbench has a build-only base target and one target per scenario: one CI job per scenario, a failure is isolated. Every other configuration has one target that runs its whole list: the `TEST <i>/<N>` header names a failing scenario. FuseSoC replaces the `parameters` list of an inherited target, so each target repeats the generics of its configuration.
 
-1. `ghdl --synth` of the toplevel (rule `ghdl_synth` of `ghdl_synth.mk`), with the options of the target: `STD`, `ANALYZE_OPTIONS` (`-Wall`), `TOPLEVEL_LIBS`, `TOPLEVEL` and the generics. It writes `sbi_icn_wrapper_synth.vhd` (netlist) and `sbi_icn_wrapper_synth.log`, prints the warnings, and fails on a synthesis error (an inferred latch is one);
-2. `ghdl -r --no-run`: elaboration with the same generics, without simulation.
-
-To add a configuration, add a target with its `parameters` (the generics are declared in the `parameters` section of `ICN.core`).
+Every `sim_*`, `lint_*` and `syn_*` target is a job of the [GitHub CI](https://github.com/deuskane/asylum-infrastructure_icn/actions/workflows/ci.yml), run in the [asylum-env](https://github.com/deuskane/asylum-ci) image (GHDL, FuseSoC, UVVM, Yosys). The `sim`, `lint` and `syn` badges count the passed and failed targets of the last run on `main`.
 
 ### How to Run
 
-The default tool is GHDL (`mk/defs.mk`: `TOOL ?= ghdl`, `TARGET ?= sim_basic`).
+From a clone of [asylum-project](https://github.com/deuskane/asylum-project) (GHDL and FuseSoC installed, or in the asylum-env image):
 
 ```bash
-make help                 # variables, rules and target list (mk/targets.txt)
-make sim_basic            # run one target (log in log/)
-make nonreg_sim           # run every sim_* target
-make lint_ghdl            # GHDL -Wall lint (make nonreg_lint: every lint_* target)
-make lint_ghdl_synth_default   # GHDL -Wall lint + ghdl --synth -Wall check of one configuration
-make clean                # remove build/
+make help                        # variables, rules and targets
+make sim_soc_arbitration         # one scenario, log in log/
+make sim_pipe                    # every scenario of a configuration
+make nonreg_sim                  # every sim_* target
+make nonreg_lint                 # every lint_* target
+make nonreg_syn                  # every syn_* target (Yosys, figures of Resources)
 ```
 
-Equivalent FuseSoC command:
+To run a list of scenarios, build the testbench once, then run the list without recompiling (same `--build-root` and `--no-export` as the Makefile, so that the build of the target is reused; any generic of the target can be overridden after the VLNV):
 
 ```bash
-fusesoc --cores-root . run --build-root build --target sim_basic asylum:infrastructure:icn:1.4.0
+make sim_soc                     # build and elaboration (TESTS_LIST empty)
+fusesoc --cores-root . run --build-root build --no-export --run --target sim_soc asylum:infrastructure:icn:1.4.0 --TESTS_LIST=latency,reset,latency
 ```
 
-### Simulation Features
+To add a scenario: a package `tb_sbi_icn_<name>_pkg` in the `sim_icn` fileset, its name in `C_TESTS` and its case in `run_test` (and `test_applies` if needed) of [tb_sbi_icn_tests_pkg](sim/icn/tb_sbi_icn_tests_pkg.vhd), a `sim_soc_<name>` target and the name in the `TESTS_LIST` of the other configurations in [ICN.core](ICN.core), then `make mk/targets.txt` and `make ci_generate`.
 
-- All `sim_*` targets analyze with `-Wall -fsynopsys -frelaxed --no-vital-checks` and run with `--fst=dut.fst --ieee-asserts=disable --assert-level=error` (waveform always written to `dut.fst`; any VHDL assertion of severity `error`, such as the `sbi_pipe` protocol check, stops the simulation with a failure).
-- The `.core` parameters `PIPEIN` / `PIPEOUT` (bool, default `false`), `MASTER_SEL`, `TARGET_SEL`, `TARGET_ADDR_ENCODING` (str), `INTERNAL_DEFAULT_SLAVE` (bool) and `WAIT_STATES` (int) are testbench generics used by `sim_pipe`, `sim_one_hot` and `sim_soc`.
-- `sbi_icn` reports its configuration and the address range of every target (with the target `info.name`) and stops with a failure on: one-hot ID with more than one bit set, one-hot select bit of a target inside the local address range of a target (itself included), binary ID not aligned on its address width, external default slave without `ID = 0` and full address width, overlapping target ranges.
-- `sbi_icn_mux_mst` warns when the granted master releases `cs` before `ready`.
-- `sbi_default_slave` reports every access (address) it receives.
-- `sbi_pipe` (`VERBOSE = true`) reports the transactions. Out of reset, on every enabled clock edge in `PENDING` without `ready`, it checks that the initiator keeps its request stable (`sbi_ini_i = sbi_ini_o`, assertion of severity `error`) and sets the sticky flag `transaction_error_q` on a violation.
+Outside the CI, GHDL writes a waveform `dut.fst`.
 
-## Synthesis
+## Dependencies and Related IPs
 
-No vendor synthesis target (the `lint_ghdl_synth_*` targets check the RTL with `ghdl --synth`, see [Targets](#targets)). The HDL of the `default` target (VHDL-2008, `vhdlSource-2008`) is synthesizable: all simulation-only code (`report`, `wait`, protocol assertion) is enclosed in `pragma translate_off / translate_on` in `sbi_icn`, `sbi_pipe` and `sbi_default_slave`. Resource-relevant generics:
+| Core | Repository | Purpose |
+|------|------------|---------|
+| `asylum:utils:pkg` | [asylum-utils-pkg](https://github.com/deuskane/asylum-utils-pkg) | `sbi_pkg` (SBI records and operators), `logic_pkg`, `convert_pkg`; the testbench needs >= 1.10.0 (`string_pkg` lists of `TESTS_LIST`) |
+| `asylum:utils:ghdl_synth` | [asylum-utils-generators](https://github.com/deuskane/asylum-utils-generators) | `ghdl --synth` check of the `lint_ghdl_synth_*` targets |
+| `asylum:utils:yosys_synth` | [asylum-utils-generators](https://github.com/deuskane/asylum-utils-generators) | Yosys synthesis of the `syn_*` targets (Artix-7 and sky130) |
+| `bitvis:verification:uvvm` | [UVVM](https://github.com/UVVM/UVVM) | Verification library and SBI VIP |
 
-- `NB_MASTER` / `NB_TARGET`: width of the request and response multiplexers and number of decoders.
-- `TARGET_SEL`: `"or"` adds zeroing gates per target and an OR tree; `"mux"` a priority multiplexer.
-- `PIPEIN_ENABLE` / `PIPEOUT_ENABLE`: each enabled `sbi_pipe` registers a full request and response (and adds latency).
-- The arbiter registers `master_id` and `busy` (plus `rr_ptr` with `"roundrobin"`).
+Used by [asylum-soc-picosoc](https://github.com/deuskane/asylum-soc-picosoc). All the IPs: [asylum-project](https://github.com/deuskane/asylum-project).
 
-## Design Notes
+## License
 
-### Address Decoding
-
-- `binary`: target `t` is selected when the address bits above `TARGET_ADDR_WIDTH(t)` equal those of `TARGET_ID(t)`; its range is `TARGET_ID(t) .. TARGET_ID(t) + 2**TARGET_ADDR_WIDTH(t) - 1`.
-- `one_hot`: target `t` is selected when the address bit at the index of the bit set in `TARGET_ID(t)` is 1.
-  The local address bits must stay below every select bit (`TARGET_ADDR_WIDTH(t) <= index of the bit set in TARGET_ID(u)` for all `t`, `u`), else an access to `t` also selects `u` (simulation check).
-- The target receives `addr(TARGET_ADDR_WIDTH(t)-1 downto 0)` zero-extended to the bus width; `re`, `we` and `wdata` are broadcast to all targets, only `cs` is decoded.
-
-### Arbitration and Latency
-
-- The arbiter grants a master on a clock edge where it is idle (`busy = 0`) and that master has `cs = 1`; the request reaches the targets only once `busy = 1`, and `busy` is released on the edge where the granted transfer returns `ready = 1`, or where the granted master has dropped `cs` before `ready` (aborted transfer: protocol violation, reported by a simulation warning, the other masters are not blocked). With zero-wait-state targets an access therefore takes two cycles, also with `NB_MASTER = 1`.
-- `"roundrobin"` starts the search at the master following the last granted one; `"fix"` always starts at master 0.
-- An enabled `sbi_pipe` runs `IDLE -> PENDING -> RESPONSE -> IDLE`: the request is registered in `IDLE`, held with `cs = 1` in `PENDING` until the target answers, and the registered response (`ready = 1`) is presented to the initiator during `RESPONSE`.
-
-### Default Slave
-
-- Internal (`INTERNAL_DEFAULT_SLAVE = True`): `sbi_default_slave` receives `cs = sbi_ini_mux.cs and not any_cs` (no target matched), answers `ready = cs` with `rdata = 0`.
-- External (`INTERNAL_DEFAULT_SLAVE = False`): the last target port is decoded with the same gated `cs`, so it receives every access not claimed by targets `0 .. NB_TARGET-2`; its `TARGET_ID` must be 0 and its `TARGET_ADDR_WIDTH` the full address width (simulation check).
-
-## Directory Structure
-
-```
-asylum-infrastructure_icn/
-├── ICN.core                       # FuseSoC core (asylum:infrastructure:icn)
-├── Makefile                       # Common Asylum Makefile (FuseSoC wrapper)
-├── mk/
-│   ├── defs.mk                    # FILE_CORE, default TARGET and TOOL
-│   └── targets.txt                # Target list (generated from the .core)
-├── doc/
-│   └── icn.drawio                 # Block diagram
-├── hdl/
-│   ├── icn_pkg.vhd
-│   ├── sbi_default_slave.vhd
-│   ├── sbi_pipe.vhd
-│   ├── sbi_icn_mux_mst.vhd
-│   ├── sbi_icn_mux_tgt.vhd
-│   ├── sbi_icn.vhd
-│   └── sbi_wrapper_target.vhd
-├── sim/
-│   ├── tb_sbi_icn.vhd             # UVVM testbench top
-│   ├── tb_sbi_icn_pkg.vhd         # SBI BFM interface array type
-│   ├── tb_sbi_icn_suite_pkg.vhd   # Test suite (TC1..TC5)
-│   ├── tb_sbi_icn_tc1_pkg.vhd
-│   ├── tb_sbi_icn_tc2_pkg.vhd
-│   ├── tb_sbi_icn_tc3_pkg.vhd
-│   ├── tb_sbi_icn_tc4_pkg.vhd     # Arbitration
-│   └── tb_sbi_icn_tc5_pkg.vhd     # Aborted transfer
-├── syn/
-│   └── sbi_icn_wrapper.vhd        # Lint / synthesis check wrapper (sbi_icn, flat SBI ports, address maps)
-└── .github/workflows/ci.yml       # CI (sim_basic, sim_one_hot, sim_pipe, sim_soc)
-```
-
-## Dependencies
-
-| Core | Used by (fileset) | Purpose |
-|------|-------------------|---------|
-| `asylum:utils:pkg` | `hdl` | Common packages (`sbi_pkg`: SBI records and operators; `logic_pkg`: `count_ones`; `convert_pkg`: `onehot_to_integer`) |
-| `bitvis:verification:uvvm` | `sim_basic` (targets `sim_basic`, `sim_one_hot`, `sim_pipe`, `sim_soc`) | UVVM utility library and SBI BFM (`bitvis_vip_sbi`) |
-| `asylum:utils:ghdl_synth` | `syn` | `ghdl_synth.sh` / `ghdl_synth.mk` (`pre_run` hook of `lint_ghdl_synth_*`) |
+Apache License 2.0, see [LICENSE](LICENSE).

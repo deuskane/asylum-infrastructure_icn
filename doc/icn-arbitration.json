@@ -1,0 +1,65 @@
+{
+ "signal": [
+  {
+   "name": "clk_i",
+   "wave": "p......"
+  },
+  {},
+  [
+   "masters",
+   {
+    "name": "M0 cs",
+    "wave": "01.0..."
+   },
+   {
+    "name": "M1 cs",
+    "wave": "01...0."
+   },
+   {
+    "name": "M0 ready",
+    "wave": "0.10..."
+   },
+   {
+    "name": "M1 ready",
+    "wave": "0...10."
+   }
+  ],
+  {},
+  [
+   "arbiter",
+   {
+    "name": "busy",
+    "wave": "0.1010."
+   },
+   {
+    "name": "master_id",
+    "wave": "3...4..",
+    "data": [
+     "0",
+     "1"
+    ]
+   }
+  ],
+  {},
+  [
+   "target",
+   {
+    "name": "cs",
+    "wave": "0.1010."
+   },
+   {
+    "name": "ready",
+    "wave": "x.1x1x."
+   }
+  ]
+ ],
+ "head": {
+  "text": "Both masters request in the same cycle (fix, no wait state)"
+ },
+ "foot": {
+  "text": "grant on an idle edge, release on the edge of ready: 2 cycles per access"
+ },
+ "config": {
+  "hscale": 2
+ }
+}

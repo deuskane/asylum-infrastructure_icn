@@ -27,4 +27,138 @@ jobs:
     with:
       name: sim_soc
 
+  sim_soc_abort:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: sim_soc_abort
+
+  sim_soc_arbitration:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: sim_soc_arbitration
+
+  sim_soc_clock_enable:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: sim_soc_clock_enable
+
+  sim_soc_contention:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: sim_soc_contention
+
+  sim_soc_default_slave:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: sim_soc_default_slave
+
+  sim_soc_exhaustive:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: sim_soc_exhaustive
+
+  sim_soc_latency:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: sim_soc_latency
+
+  sim_soc_reset:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: sim_soc_reset
+
+  sim_soc_simple:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: sim_soc_simple
+
+  lint_ghdl:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: lint_ghdl
+
+  lint_ghdl_synth_default:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: lint_ghdl_synth_default
+
+  lint_ghdl_synth_one_hot:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: lint_ghdl_synth_one_hot
+
+  lint_ghdl_synth_picosoc_icn1:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: lint_ghdl_synth_picosoc_icn1
+
+  lint_ghdl_synth_picosoc_rr:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: lint_ghdl_synth_picosoc_rr
+
+  lint_ghdl_synth_tb:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: lint_ghdl_synth_tb
+
+  lint_ghdl_synth_tb_pipe:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: lint_ghdl_synth_tb_pipe
+
+  lint_ghdl_synth_width0:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: lint_ghdl_synth_width0
+
+  lint_ghdl_width0:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: lint_ghdl_width0
+
+  syn_default:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: syn_default
+
+  syn_one_hot:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: syn_one_hot
+
+  syn_picosoc_icn1:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: syn_picosoc_icn1
+
+  syn_picosoc_rr:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: syn_picosoc_rr
+
+  syn_tb:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: syn_tb
+
+  syn_tb_pipe:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: syn_tb_pipe
+
+  syn_width0:
+    uses: deuskane/asylum-ci/.github/workflows/vhdl-ci.yml@main
+    with:
+      name: syn_width0
+
+  badges:
+    needs: [sim_basic, sim_one_hot, sim_pipe, sim_soc, sim_soc_abort, sim_soc_arbitration, sim_soc_clock_enable, sim_soc_contention, sim_soc_default_slave, sim_soc_exhaustive, sim_soc_latency, sim_soc_reset, sim_soc_simple, lint_ghdl, lint_ghdl_synth_default, lint_ghdl_synth_one_hot, lint_ghdl_synth_picosoc_icn1, lint_ghdl_synth_picosoc_rr, lint_ghdl_synth_tb, lint_ghdl_synth_tb_pipe, lint_ghdl_synth_width0, lint_ghdl_width0, syn_default, syn_one_hot, syn_picosoc_icn1, syn_picosoc_rr, syn_tb, syn_tb_pipe, syn_width0]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    uses: deuskane/asylum-ci/.github/workflows/badges.yml@main
+    with:
+      results: ${{ toJSON(needs) }}
+
 #<GENERATE_END>
