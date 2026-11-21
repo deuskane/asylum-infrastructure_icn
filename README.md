@@ -184,15 +184,15 @@ Figures of the `syn_*` targets (`make nonreg_syn`, see [Targets](#targets)): [sy
 
 | Configuration | LUT¹ | LUTRAM¹ | FF¹ | CARRY4¹ | MUXF7/F8¹ | BRAM¹ | DSP¹ | Area² (µm²) | kGE³ |
 |---|---|---|---|---|---|---|---|---|---|
-| `syn_default` (PicoSoC ICN2: 1 master, 10 targets, or) | 72 | 0 | 1 | 0 | 29 | 0 | 0 | 583.06 | 0.155 |
-| `syn_picosoc_icn1` (1 master, 2 targets + external default slave) | 30 | 0 | 1 | 0 | 25 | 0 | 0 | 255.24 | 0.068 |
-| `syn_picosoc_rr` (ICN2 map, 2 masters round robin) | 142 | 0 | 3 | 0 | 64 | 0 | 0 | 920.88 | 0.245 |
-| `syn_tb` (2 masters round robin, 3 targets, mux) | 42 | 0 | 3 | 0 | 3 | 0 | 0 | 575.55 | 0.153 |
-| `syn_tb_pipe` (`syn_tb` with `sbi_pipe` on the 2 master and 3 target ports) | 114 | 0 | 152 | 0 | 2 | 0 | 0 | 5709.23 | 1.521 |
-| `syn_one_hot` (3 masters, 4 one-hot targets) | 54 | 0 | 3 | 0 | 0 | 0 | 0 | 721.94 | 0.192 |
-| `syn_width0` (1 master, 2 single-register targets + 1 of 7 bits) | 27 | 0 | 1 | 0 | 5 | 0 | 0 | 217.71 | 0.058 |
+| `syn_default` (PicoSoC ICN2: 1 master, 10 targets, or) | 72 | 0 | 1 | 0 | 24 | 0 | 0 | 583.06 | 0.155 |
+| `syn_picosoc_icn1` (1 master, 2 targets + external default slave) | 30 | 0 | 1 | 0 | 18 | 0 | 0 | 255.24 | 0.068 |
+| `syn_picosoc_rr` (ICN2 map, 2 masters round robin) | 140 | 0 | 3 | 0 | 55 | 0 | 0 | 920.88 | 0.245 |
+| `syn_tb` (2 masters round robin, 3 targets, mux) | 39 | 0 | 3 | 0 | 3 | 0 | 0 | 575.55 | 0.153 |
+| `syn_tb_pipe` (`syn_tb` with `sbi_pipe` on the 2 master and 3 target ports) | 86 | 0 | 152 | 0 | 2 | 0 | 0 | 5709.23 | 1.521 |
+| `syn_one_hot` (3 masters, 4 one-hot targets) | 52 | 0 | 3 | 0 | 0 | 0 | 0 | 721.94 | 0.192 |
+| `syn_width0` (1 master, 2 single-register targets + 1 of 7 bits) | 26 | 0 | 1 | 0 | 5 | 0 | 0 | 217.71 | 0.058 |
 
-¹ Xilinx Artix-7 (LUT6), Yosys 0.33 `synth_xilinx -flatten -noiopad -noclkbuf`, before place and route: every cell of the netlist is counted, Vivado may differ. An `INV` counts as a `LUT1`: `synth_xilinx` puts one on the reset pin of each flip-flop with the active-low reset. The interconnect has no memory: no LUTRAM, no BRAM.
+¹ Xilinx Artix-7 (LUT6), Yosys 0.33 `synth_xilinx -flatten -noiopad -noclkbuf`, before place and route: every cell of the netlist is counted, Vivado may differ. Identical cells are merged as a vendor tool does (`opt_merge -share_all`): the inverters of an active-low reset net become one; every remaining cell is counted, an `INV` as a `LUT1`. The interconnect has no memory: no LUTRAM, no BRAM.
 
 ² SkyWater sky130 `sky130_fd_sc_hd`, typical corner (tt, 25 °C, 1.80 V), Yosys 0.33 `synth` + `dfflibmap` + `abc -liberty`: standard-cell area only, no timing constraint, no buffering, clock tree or placement.
 
